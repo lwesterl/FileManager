@@ -1,0 +1,7 @@
+# FileManager .gitignore
+# Author: Lauri Westerholm
+
+# Ignore compiled files
+./bin/*
+# However, do not ignore the Makefile
+!./bin/Makefile
