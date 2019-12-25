@@ -2,6 +2,6 @@
 # Author: Lauri Westerholm
 
 # Ignore compiled files
-./bin/*
+bin/*
 # However, do not ignore the Makefile
-!./bin/Makefile
+!bin/Makefile
