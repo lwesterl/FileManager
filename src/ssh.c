@@ -163,18 +163,18 @@ int end_session(Session *session) {
   }
 
   enum AuthenticationAction authenticate_key(Session *session, const enum AuthenticationAction action) {
-  // clear public key hash
-  ssh_clean_pubkey_hash(&(session->hash));
+    // clear public key hash
+    ssh_clean_pubkey_hash(&(session->hash));
 
-  if (action == AUTHENTICATION_ACCEPT) {
-    if (ssh_write_knownhost(session->session) < 0) {
-      Session_message(session, strerror(errno));
-      return AUTHENTICATION_ERROR;
+    if (action == AUTHENTICATION_ACCEPT) {
+      if (ssh_write_knownhost(session->session) < 0) {
+        Session_message(session, strerror(errno));
+        return AUTHENTICATION_ERROR;
+      }
+      return AUTHENTICATION_OK;
     }
-    return AUTHENTICATION_OK;
-  }
-  // user has decided to decline the server public key
-  return AUTHENTICATION_CANCEL;
+    // user has decided to decline the server public key
+    return AUTHENTICATION_CANCEL;
   }
 #endif // authenticate_init and authenticate_key implementations
 
