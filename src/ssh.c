@@ -58,7 +58,6 @@ int end_session(Session *session) {
 }
 
 #if LIBSSH_VERSION_MINOR >= 8 || LIBSSH_VERSION_MAJOR > 0
-#define
   // For newer sshlib versions
   enum AuthenticationAction authenticate_init(Session *session) {
     ssh_key pubkey;
