@@ -5,3 +5,6 @@
 bin/*
 # However, do not ignore the Makefile
 !bin/Makefile
+
+# Ignore temporary glade files
+*.glade~
