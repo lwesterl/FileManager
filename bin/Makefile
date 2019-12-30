@@ -4,9 +4,9 @@
 SRC = ../src
 INC = ../include
 CC = gcc
-CFLAGS = -Wall -pedantic -Wextra -g
-LDFLAGS = -lssh
-OBJ = ssh.o
+CFLAGS = -Wall -pedantic -Wextra -g $(shell pkg-config --cflags gtk+-3.0)
+LDFLAGS = -lssh $(shell pkg-config --libs gtk+-3.0)
+OBJ = ssh.o UI.o
 EXE = main
 
 .PHONY: run clean clean-objects
@@ -29,4 +29,4 @@ run: main
 	./$<
 
 leak-check: main
-	valgrind ./$< --leak-check=yes 
+	valgrind ./$< --leak-check=yes
