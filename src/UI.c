@@ -6,30 +6,37 @@
 
 #include "../include/UI.h"
 
+/* UI initializations */
 void initUI(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
+  session = NULL;
 
   builder = gtk_builder_new_from_file(LAYOUT_PATH);
 
   init_MainWindow();
   init_ConnectWindow();
+  init_MessageWindow();
+  gtk_builder_connect_signals(builder, NULL);
   gtk_widget_show_all(connectWindow->ConnectDialog);
 
   // Start main event loop
   gtk_main();
 }
 
-
 void quitUI() {
-  // Quit gtk event loop
+    // Quit gtk event loop
   gtk_main_quit();
+  if (session) {
+    end_session(session);
+  }
+
+  g_object_unref(builder);
   // Free allocated memory
   free(mainWindow);
   free(connectWindow);
   free(messageWindow);
 }
 
-/* Window init calls */
 void init_MainWindow() {
   mainWindow = malloc(sizeof(MainWindow));
   mainWindow->TopWindow = GTK_WIDGET(gtk_builder_get_object(builder, "TopWindow"));
@@ -84,6 +91,8 @@ void init_ConnectWindow() {
   connectWindow->ConnectDialogButtonBox = GTK_WIDGET(gtk_builder_get_object(builder, "ConnectDialogButtonBox"));
   connectWindow->QuitButton = GTK_WIDGET(gtk_builder_get_object(builder, "QuitButton"));
   connectWindow->ConnectButton = GTK_WIDGET(gtk_builder_get_object(builder, "ConnectButton"));
+
+  g_signal_connect(connectWindow->ConnectDialog, "destroy", G_CALLBACK(quitUI), NULL);
 }
 
 void init_MessageWindow() {
@@ -94,9 +103,17 @@ void init_MessageWindow() {
   messageWindow->MessageButtonBox = GTK_WIDGET(gtk_builder_get_object(builder, "MessageButtonBox"));
   messageWindow->CancelButton = GTK_WIDGET(gtk_builder_get_object(builder, "CancelButton"));
   messageWindow->OkButton = GTK_WIDGET(gtk_builder_get_object(builder, "OkButton"));
+
+  g_signal_connect(messageWindow->MessageDialog, "destroy", G_CALLBACK(close_MessageWindow), NULL);
 }
 
-void adjust_MessageWindow(const enum MessageType messageType, const char *message) {
+void close_MessageWindow() {
+  gtk_widget_hide(messageWindow->MessageDialog);
+  gtk_label_set_text((GtkLabel*) messageWindow->MessageLabel, "");
+}
+
+/* Window transitions */
+void transition_MessageWindow(const enum MessageType messageType, const char *message) {
   messageWindow->messageType = messageType;
   gtk_label_set_text((GtkLabel*) messageWindow->MessageLabel, message);
   gtk_widget_show_all(messageWindow->MessageDialog);
@@ -105,32 +122,82 @@ void adjust_MessageWindow(const enum MessageType messageType, const char *messag
     gtk_widget_hide(messageWindow->CancelButton);
   }
 }
+void transition_MainWindow() {
+  // TODO: Update the FileViews
+  close_MessageWindow();
+  gtk_widget_hide(connectWindow->ConnectDialog);
+  gtk_widget_show_all(mainWindow->TopWindow);
+}
+
 
 /* Button actions */
-void LeftFileHomeButton_action() {}
-void LeftFileBackButton_action() {}
-void LeftNewFolderButton_action() {}
-void RightFileHomeButton_action() {}
-void RightFileBackButton_action() {}
-void RightNewFolderButton_action() {}
+void LeftFileHomeButton_action(__attribute__((unused)) GtkButton *LeftFileHomeButton) {}
+void LeftFileBackButton_action(__attribute__((unused)) GtkButton *LeftFileBackButton) {}
+void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolderButton) {}
+void RightFileHomeButton_action(__attribute__((unused)) GtkButton *RightFileHomeButton) {}
+void RightFileBackButton_action(__attribute__((unused)) GtkButton *RightFileBackButton) {}
+void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFolderButton) {}
 
-void QuitButton_action() {
+void QuitButton_action(__attribute__((unused)) GtkButton *QuitButton) {
   quitUI();
 }
-void ConnectButton_action() {
+
+void ConnectButton_action(__attribute__((unused)) GtkButton *ConnectButton) {
   // get ip, username (and password)
+  const char *ip = (char *) gtk_entry_get_text((GtkEntry*) connectWindow->SetIPEntry);
+  const char *username = (char *) gtk_entry_get_text((GtkEntry*) connectWindow->SetUsernameEntry);
+  const char *password = (char *) gtk_entry_get_text((GtkEntry*) connectWindow->SetPasswordEntry);
   // Try to connect using create_session() and autheticate_init()
+  session = create_session(username, ip);
+  if (session == NULL) {
+    transition_MessageWindow(INFO_ERROR, get_error(SSH_CREATE_ERROR));
+    return;
+  }
+  enum AuthenticationAction result = authenticate_init(session);
+  switch (result) {
+    case AUTHENTICATION_OK:
+      transition_MainWindow();
+      break;
+    case AUTHENTICATION_ASK:
+      transition_MessageWindow(ASK_SSH, session->message);
+      break;
+    case AUTHENTICATION_ERROR:
+      // Try also password authentication, this may be unnecessary
+      if (authenticate_password(session, password) == AUTHENTICATION_OK) {
+        transition_MainWindow();
+      } else {
+        transition_MessageWindow(INFO_ERROR, session->message);
+      }
+    default:
+      return;
+  }
 }
 
-void CancelButton_action() {
+void CancelButton_action(__attribute__((unused)) GtkButton *CancelButton) {
   gtk_widget_hide(messageWindow->MessageDialog);
 }
 
-void OkButton_action() {
+void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
   if (messageWindow->messageType == ASK_SSH) {
     // User accepted the ssh key
     // Try to connect using authenticate_key(Session *session, const enum AuthenticationAction action)
-
+    const char *password = (char *) gtk_entry_get_text((GtkEntry*) connectWindow->SetPasswordEntry);
+    enum AuthenticationAction result = authenticate_key(session, AUTHENTICATION_ACCEPT);
+    switch(result) {
+      case AUTHENTICATION_OK:
+        transition_MainWindow();
+        break;
+      case AUTHENTICATION_ERROR:
+        // Test whether password authentication works
+        if (authenticate_password(session, password) == AUTHENTICATION_OK) {
+          transition_MainWindow();
+        } else {
+          transition_MessageWindow(INFO_ERROR, session->message);
+        }
+      default:
+        return;
+    }
+  } else {
+    close_MessageWindow();
   }
-  gtk_widget_hide(messageWindow->MessageDialog);
 }

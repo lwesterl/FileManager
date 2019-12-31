@@ -114,11 +114,14 @@ MessageWindow *messageWindow; /** Pointer to a message window */
 ConnectWindow *connectWindow; /** Pointer to the connect window */
 Session *session; /**< SSH Session pointer */
 
+/* UI initialization */
 /**
   *   @brief Initialize UI from the glade file
+  *   @param argc Number of command line arguments
+  *   @param argv Command line arguments
   *   @remark Updates global structs
   */
-void initUI();
+void initUI(int argc, char *argv[]);
 
 /**
   *   @brief Quit UI event loop and destroy all UI elements
@@ -145,49 +148,66 @@ void init_ConnectWindow();
 void init_MessageWindow();
 
 /**
-  *   @brief Adjust messageWindow to show correct message and MessageType
+  *   @brief Close messageWindow
+  */
+void close_MessageWindow();
+
+
+/* Window transitions */
+
+/**
+  *   @brief Transition to messageWindow and show correct message and MessageType
   *   @param messageType Apropriate MessageType: CancelButton only shown when
   *   MessageType.ASK_SSH
   *   @param message To be displayed
   *   @remark Call this always when messageWindow needs to be shown
   */
-void adjust_MessageWindow(const enum MessageType messageType, const char *message);
+void transition_MessageWindow(const enum MessageType messageType, const char *message);
+
+/**
+  *   @brief Transition from ConnectWindow to MainWindow
+  */
+void transition_MainWindow();
 
 
 /* Button actions */
-void LeftFileHomeButton_action();
-void LeftFileBackButton_action();
-void LeftNewFolderButton_action();
-void RightFileHomeButton_action();
-void RightFileBackButton_action();
-void RightNewFolderButton_action();
+void LeftFileHomeButton_action(GtkButton *LeftFileHomeButton);
+void LeftFileBackButton_action(GtkButton *LeftFileBackButton);
+void LeftNewFolderButton_action(GtkButton *LeftNewFolderButton);
+void RightFileHomeButton_action(GtkButton *RightFileHomeButton);
+void RightFileBackButton_action(GtkButton *RightFileBackButton);
+void RightNewFolderButton_action(GtkButton *RightNewFolderButton);
 
 /**
   *   @brief Quit from the ConnectWindow
+  *   @param QuitButton Button clicked, unused
   */
-void QuitButton_action();
+void QuitButton_action(GtkButton *QuitButton);
 /**
   *   @brief Try to connect via SSH to the provided remote
+  *   @param ConnectButton Button clicked, unused
   *   @details When connection succeeds mainWindow is shown. If user needs to
   *   confirm the remote puclic key, messageWindow is shown (MessageType.ASK_SSH).
   *   In case of an error, messageWindow is shown (MessageType.INFO_ERROR)
   */
-void ConnectButton_action();
+void ConnectButton_action(GtkButton *ConnectButton);
 
 
 /**
   *   @brief Cancel previous action
+  *   @param CancelButton Button clicked, unused
   *   @remark Used to reject a public ssh key after which the messageWindow
   *   should be closed and connectWindow activated
   */
-void CancelButton_action();
+void CancelButton_action(GtkButton *CancelButton);
 /**
   *   @brief Proceed / accept action
+  *   @param OkButton Button clicked, unused
   *   @remark Used to accept a puclic ssh key after which the mainWindow is
   *   activated and messageWindow & connectWindow closed. Can be also used to
   *   display info/error messages and to return to connectWindow
   */
-void OkButton_action();
+void OkButton_action(GtkButton *OkButton);
 
 
 
