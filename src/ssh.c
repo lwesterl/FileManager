@@ -90,10 +90,10 @@ int end_session(Session *session) {
         ssh_clean_pubkey_hash(&(session->hash));
         return AUTHENTICATION_ERROR;
       case SSH_KNOWN_HOSTS_NOT_FOUND:
-        Session_message(session, get_error(KNOWN_HOSTS_NOT_FOUND));
+        Session_message(session, get_detailed_error(KNOWN_HOSTS_NOT_FOUND, session->hash, session->hash_len));
         return AUTHENTICATION_ASK;
       case SSH_KNOWN_HOSTS_UNKNOWN:
-        Session_message(session, get_error(SERVER_UNKNOWN));
+        Session_message(session, get_detailed_error(SERVER_UNKNOWN, session->hash, session->hash_len));
         return AUTHENTICATION_ASK;
       case SSH_KNOWN_HOSTS_ERROR:
         Session_message(session, ssh_get_error(session->session));
@@ -149,10 +149,10 @@ int end_session(Session *session) {
         ssh_clean_pubkey_hash(&(session->hash));
         return AUTHENTICATION_ERROR;
       case SSH_SERVER_FILE_NOT_FOUND:
-        Session_message(session, get_error(KNOWN_HOSTS_NOT_FOUND));
+        Session_message(session,  get_detailed_error(KNOWN_HOSTS_NOT_FOUND, session->hash, session->hash_len));
         return AUTHENTICATION_ASK;
       case SSH_SERVER_NOT_KNOWN:
-        Session_message(session, get_error(SERVER_UNKNOWN));
+        Session_message(session, get_detailed_error(SERVER_UNKNOWN, session->hash, session->hash_len));
         return AUTHENTICATION_ASK;
       case SSH_SERVER_ERROR:
         Session_message(session, ssh_get_error(session->session));
