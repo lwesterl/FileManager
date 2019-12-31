@@ -25,9 +25,10 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="action_name">QuitButton_action</property>
+                <property name="tooltip_text" translatable="yes">Quit application</property>
                 <property name="use_stock">True</property>
                 <property name="always_show_image">True</property>
+                <signal name="clicked" handler="QuitButton_action" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -41,7 +42,8 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="action_name">ConnectButton_action</property>
+                <property name="tooltip_text" translatable="yes">Connect using SSH</property>
+                <signal name="clicked" handler="ConnectButton_action" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -146,6 +148,8 @@
             <property name="can_focus">True</property>
             <property name="tooltip_text" translatable="yes">Set password, not needed if a ssh key has been configured</property>
             <property name="margin_bottom">30</property>
+            <property name="visibility">False</property>
+            <property name="invisible_char">*</property>
             <property name="input_purpose">password</property>
           </object>
           <packing>
@@ -177,9 +181,9 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Cancel</property>
-                <property name="action_name">CancelButton_action</property>
                 <property name="use_stock">True</property>
                 <property name="always_show_image">True</property>
+                <signal name="clicked" handler="CancelButton_action" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -194,9 +198,9 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Confirm action</property>
-                <property name="action_name">OkButton_action</property>
                 <property name="use_stock">True</property>
                 <property name="always_show_image">True</property>
+                <signal name="clicked" handler="OkButton_action" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -312,9 +316,9 @@
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">Go to home directory</property>
-                                    <property name="action_name">LeftFileHomeButton_action</property>
                                     <property name="use_stock">True</property>
                                     <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="LeftFileHomeButton_action" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -328,9 +332,9 @@
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">Go to previous directory</property>
-                                    <property name="action_name">LeftFileBackButton_action</property>
                                     <property name="use_stock">True</property>
                                     <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="LeftFileBackButton_action" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -344,7 +348,7 @@
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">Create a new folder</property>
-                                    <property name="action_name">LeftNewFolderButton_action</property>
+                                    <signal name="clicked" handler="LeftNewFolderButton_action" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">2</property>
@@ -451,9 +455,9 @@
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">Go to home directory</property>
-                                    <property name="action_name">RightFileHomeButton_action</property>
                                     <property name="use_stock">True</property>
                                     <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="RightFileHomeButton_action" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
@@ -467,9 +471,9 @@
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">Go to previous directory</property>
-                                    <property name="action_name">RightFileBackButton_action</property>
                                     <property name="use_stock">True</property>
                                     <property name="always_show_image">True</property>
+                                    <signal name="clicked" handler="RightFileBackButton_action" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -483,7 +487,7 @@
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
                                     <property name="tooltip_text" translatable="yes">Create a new folder</property>
-                                    <property name="action_name">RightNewFolderButton_action</property>
+                                    <signal name="clicked" handler="RightNewFolderButton_action" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">2</property>
