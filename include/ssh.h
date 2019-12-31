@@ -24,7 +24,7 @@
 typedef struct {
   ssh_session session; /** libssh session */
   int sessionID; /** libssh session rc */
-  char *message; /** Used to hold info about authetication etc. */
+  char *message; /** Used to hold info about authentication etc. */
   unsigned char *hash; /** Remote server public key hash */
   size_t hash_len;
 } Session;
