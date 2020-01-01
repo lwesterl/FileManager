@@ -10,6 +10,7 @@
 
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>
+#include <gmodule.h> // Linked list implementation, GSList
 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -18,6 +19,7 @@
 #include <string.h>
 
 #include "ssh.h"
+#include "fs.h"
 
 #define LAYOUT_PATH "../layout/FileManagerUI.glade" /** Path to the glade file */
 
@@ -113,6 +115,9 @@ MainWindow *mainWindow; /** Pointer to the main window instance */
 MessageWindow *messageWindow; /** Pointer to a message window */
 ConnectWindow *connectWindow; /** Pointer to the connect window */
 Session *session; /**< SSH Session pointer */
+GSList *RemoteFiles; /**< Used to store remote Files, @see File */
+GSList *LocalFiles; /**< Used to store local Files, @see File */
+
 
 /* UI initialization */
 /**

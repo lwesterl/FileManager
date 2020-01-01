@@ -217,3 +217,47 @@ int init_sftp_session(Session *session) {
   }
   return 0;
 }
+
+int sftp_session_mkdir(Session *session, const char *dir_name) {
+  if(sftp_mkdir(session->sftp, dir_name, S_IRWXU) != SSH_OK) {
+    if (sftp_get_error(session->sftp) != SSH_FX_FILE_ALREADY_EXISTS) {
+      Session_message(session, ssh_get_error(session->session));
+    }
+  }
+  return 0;
+}
+
+enum FileStatus sftp_session_write_file(Session *session,
+                            const char *filename,
+                            const void *buff,
+                            size_t len,
+                            bool overwrite)
+{
+  int write_flags = overwrite ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY | O_CREAT;
+  int permissions = S_IRWXU;
+
+  sftp_file file = sftp_open(session->sftp, filename, write_flags, permissions);
+  if (!file) {
+    sftp_file open_test = sftp_open(session->sftp, filename, O_RDONLY, permissions);
+    if (open_test){
+      // File already exists and it is tried to be written without being truncated
+      sftp_close(open_test);
+      Session_message(session, get_error(ERROR_FILE_ALREADY_EXISTS));
+      return FILE_ALREADY_EXISTS;
+    }
+    Session_message(session, get_error(ERROR_WRITING_TO_FILE));
+    return FILE_WRITE_FAILED;
+  }
+  size_t count = sftp_write(file, buff, len);
+  if (count != len) {
+    Session_message(session, get_error(ERROR_OPENING_FILE));
+    return FILE_WRITE_FAILED;
+  }
+  sftp_close(file); // No error checking because if this fails there is very little that can be done
+  return FILE_WRITTEN_SUCCESSFULLY;
+}
+
+int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
+  // TODO
+  return 0;
+}

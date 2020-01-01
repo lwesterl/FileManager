@@ -26,7 +26,10 @@ static const char* const error_strings[] =
   "Info: server is unknown.\nDo you trust the server?\nThe server provided the following SHA1 public key:\n",
   "Error: password authentication\n",
   "Error: SFTP session allocation failed\n",
-  "Error: SFTP session initialization failed\n"
+  "Error: SFTP session initialization failed\n",
+  "Error: file already exists. Do you want to overwrite it?\n",
+  "Error: cannot open the file\n",
+  "Error: cannot write to the file\n"
 };
 
 /** Error enums */
@@ -41,7 +44,10 @@ enum ErrorCode {
   SERVER_UNKNOWN = 7,
   ERROR_PASSWORD_AUTHENTICATION = 8,
   ERROR_SFTP_ALLOCATION = 9,
-  ERROR_SFTP_INITIALIZATION = 10
+  ERROR_SFTP_INITIALIZATION = 10,
+  ERROR_FILE_ALREADY_EXISTS = 11,
+  ERROR_OPENING_FILE = 12,
+  ERROR_WRITING_TO_FILE = 13
 };
 
 /**

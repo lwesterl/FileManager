@@ -10,13 +10,17 @@
 #define LIBSSH_STATIC 1
 #include <libssh/libssh.h>
 #include <libssh/sftp.h>
+#include <gmodule.h> // Linked list implementation, GSList
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "str_messages.h"
+#include "fs.h"
 
 /**
   *   @struct Session
@@ -55,6 +59,15 @@ enum AuthenticationAction {
   AUTHENTICATION_DECLINE, /**< User declines remote public key */
   AUTHENTICATION_PASSWORD_NEEDED /**< User needs to authenticate using password */
 };
+
+/**
+  *   @enum bool
+  *   @brief Booleans: true and false
+  */
+typedef enum {
+  false = 0, /**< false Boolean */
+  true = 1 /**< true Boolean */
+} bool;
 
 
 /**
@@ -109,5 +122,39 @@ enum AuthenticationAction authenticate_password(Session *session, const char *pa
   *   @return 0 on success, -1 on error
   */
 int init_sftp_session(Session *session);
+
+/**
+  *   @brief Create new directory using sftp
+  *   @param session Session which contains already established sftp connection
+  *   @param dir_name Directory name
+  *   @return 0 on success, -1 on error (sets corresponding error message, @see Session_message)
+  *   @remark This is only a wrapper for libssh sftp_mkdir
+  */
+int sftp_session_mkdir(Session *session, const char *dir_name);
+
+/**
+  *   @brief Write to remote file using sftp
+  *   @param session Session which contains already established sftp connection
+  *   @param filename Target filename on the remote (filepath)
+  *   @param buff Buffer which contains the file content
+  *   @param len buff length in bytes
+  *   @param overwrite Whether to overwrite if the file already exists
+  *   @return FileStatus (sets corresponding error message, @see Session_message)
+  */
+enum FileStatus sftp_session_write_file(Session *session,
+                            const char *filename,
+                            const void *buff,
+                            size_t len,
+                            bool overwrite);
+
+/**
+  *   @brief List remote files using sftp
+  *   @param session Session which contains already established sftp connection
+  *   @param files Linked list where the directory content is appended to,
+  *   old content is removed (needs to be dynamically allocated)
+  *   @param dir_name Path of the directory to be listed
+  *   @return 0 on success, -1 on error (sets corresponding error message, @see Session_message)
+  */
+int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name);
 
 #endif // end SSH_HEADER
