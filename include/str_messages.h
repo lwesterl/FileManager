@@ -24,7 +24,9 @@ static const char* const error_strings[] =
   "Error: cannot find apropriate public key for server\n",
   "Info: cannot find ~/.ssh/known_hosts\n(created if the server key is accepted).\nThe server provided the following SHA1 public key:\n",
   "Info: server is unknown.\nDo you trust the server?\nThe server provided the following SHA1 public key:\n",
-  "Error: password authentication\n"
+  "Error: password authentication\n",
+  "Error: SFTP session allocation failed\n",
+  "Error: SFTP session initialization failed\n"
 };
 
 /** Error enums */
@@ -37,7 +39,9 @@ enum ErrorCode {
   ERROR_PUB_KEY_NOT_APROPRIATE = 5,
   KNOWN_HOSTS_NOT_FOUND = 6,
   SERVER_UNKNOWN = 7,
-  ERROR_PASSWORD_AUTHENTICATION = 8
+  ERROR_PASSWORD_AUTHENTICATION = 8,
+  ERROR_SFTP_ALLOCATION = 9,
+  ERROR_SFTP_INITIALIZATION = 10
 };
 
 /**

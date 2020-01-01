@@ -25,6 +25,7 @@ Session *create_session(const char *username, const char *remote) {
     Session *session = malloc(sizeof(Session));
     session->message = NULL;
     session->hash = NULL;
+    session->sftp = NULL;
     session->session = ssh_new();
     if (!session->session) {
       perror(get_error(SSH_CREATE_ERROR));
@@ -46,6 +47,9 @@ Session *create_session(const char *username, const char *remote) {
 
 int end_session(Session *session) {
   if (session) {
+    if (session->sftp) {
+      sftp_free(session->sftp);
+    }
     ssh_disconnect(session->session);
     ssh_free(session->session);
     if (session->message) {
@@ -80,6 +84,9 @@ int end_session(Session *session) {
     switch(state) {
       case SSH_KNOWN_HOSTS_OK:
         ssh_clean_pubkey_hash(&(session->hash));
+        if (ssh_userauth_publickey_auto(session->session, NULL, NULL) != SSH_AUTH_SUCCESS) {
+          return AUTHENTICATION_PASSWORD_NEEDED;
+        }
         return AUTHENTICATION_OK;
       case SSH_KNOWN_HOSTS_CHANGED:
         Session_message(session, get_error(ERROR_PUB_KEY_CHANGED));
@@ -111,6 +118,9 @@ int end_session(Session *session) {
         Session_message(session, strerror(errno));
         return AUTHENTICATION_ERROR;
       }
+      if (ssh_userauth_publickey_auto(session->session, NULL, NULL) != SSH_AUTH_SUCCESS) {
+        return AUTHENTICATION_PASSWORD_NEEDED;
+      }
       return AUTHENTICATION_OK;
     }
     // user has decided to decline the server public key
@@ -139,6 +149,9 @@ int end_session(Session *session) {
     switch(state) {
       case SSH_SERVER_KNOWN_OK:
         ssh_clean_pubkey_hash(&(session->hash));
+        if (ssh_userauth_publickey_auto(session->session, NULL, NULL) != SSH_AUTH_SUCCESS) {
+          return AUTHENTICATION_PASSWORD_NEEDED;
+        }
         return AUTHENTICATION_OK;
       case SSH_SERVER_KNOWN_CHANGED:
         Session_message(session, get_error(ERROR_PUB_KEY_CHANGED));
@@ -170,6 +183,9 @@ int end_session(Session *session) {
         Session_message(session, strerror(errno));
         return AUTHENTICATION_ERROR;
       }
+      if (ssh_userauth_publickey_auto(session->session, NULL, NULL) != SSH_AUTH_SUCCESS) {
+        return AUTHENTICATION_PASSWORD_NEEDED;
+      }
       return AUTHENTICATION_OK;
     }
     // user has decided to decline the server public key
@@ -183,4 +199,21 @@ enum AuthenticationAction authenticate_password(Session *session, const char *pa
     return AUTHENTICATION_ERROR;
   }
   return AUTHENTICATION_OK;
+}
+
+
+// SFTP related
+
+int init_sftp_session(Session *session) {
+  session->sftp = sftp_new(session->session);
+  if (!session->sftp) {
+    Session_message(session, get_error(ERROR_SFTP_ALLOCATION));
+    return -1;
+  }
+  if (sftp_init(session->sftp) != SSH_OK) {
+    Session_message(session, get_error(ERROR_SFTP_INITIALIZATION));
+    sftp_free(session->sftp);
+    return -1;
+  }
+  return 0;
 }

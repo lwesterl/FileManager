@@ -122,11 +122,17 @@ void transition_MessageWindow(const enum MessageType messageType, const char *me
     gtk_widget_hide(messageWindow->CancelButton);
   }
 }
+
 void transition_MainWindow() {
-  // TODO: Update the FileViews
-  close_MessageWindow();
-  gtk_widget_hide(connectWindow->ConnectDialog);
-  gtk_widget_show_all(mainWindow->TopWindow);
+  // Establish SFTP session
+  if (init_sftp_session(session) == 0) {
+    close_MessageWindow();
+    gtk_widget_hide(connectWindow->ConnectDialog);
+    gtk_widget_show_all(mainWindow->TopWindow);
+  } else {
+    // Some error happened
+    transition_MessageWindow(INFO_ERROR, session->message);
+  }
 }
 
 
@@ -158,16 +164,18 @@ void ConnectButton_action(__attribute__((unused)) GtkButton *ConnectButton) {
     case AUTHENTICATION_OK:
       transition_MainWindow();
       break;
-    case AUTHENTICATION_ASK:
-      transition_MessageWindow(ASK_SSH, session->message);
-      break;
-    case AUTHENTICATION_ERROR:
-      // Try also password authentication, this may be unnecessary
+    case AUTHENTICATION_PASSWORD_NEEDED:
       if (authenticate_password(session, password) == AUTHENTICATION_OK) {
         transition_MainWindow();
       } else {
         transition_MessageWindow(INFO_ERROR, session->message);
       }
+      break;
+    case AUTHENTICATION_ASK:
+      transition_MessageWindow(ASK_SSH, session->message);
+      break;
+    case AUTHENTICATION_ERROR:
+      transition_MessageWindow(INFO_ERROR, session->message);
     default:
       return;
   }
@@ -187,13 +195,15 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
       case AUTHENTICATION_OK:
         transition_MainWindow();
         break;
-      case AUTHENTICATION_ERROR:
-        // Test whether password authentication works
+      case AUTHENTICATION_PASSWORD_NEEDED:
         if (authenticate_password(session, password) == AUTHENTICATION_OK) {
           transition_MainWindow();
         } else {
           transition_MessageWindow(INFO_ERROR, session->message);
         }
+        break;
+      case AUTHENTICATION_ERROR:
+        transition_MessageWindow(INFO_ERROR, session->message);
       default:
         return;
     }
