@@ -3,8 +3,11 @@
 
 # Ignore compiled files
 bin/*
-# However, do not ignore the Makefile
+test/*
+# However, do not ignore the Makefiles and source files
 !bin/Makefile
+!test/Makefile
+!test/*.c
 
 # Ignore temporary glade files
 *.glade~
