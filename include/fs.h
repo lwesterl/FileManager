@@ -19,13 +19,24 @@
 #include <fcntl.h>
 
 /**
+  *   @enum bool
+  *   @brief Booleans: true and false
+  */
+typedef enum {
+  false = 0, /**< false Boolean */
+  true = 1 /**< true Boolean */
+} bool;
+
+
+/**
   *   @enum FileStatus
   *   @brief Contains values for different file related errors/events
   */
 enum FileStatus {
-  FILE_WRITTEN_SUCCESSFULLY, /**< Successfully completed writing to a file */
-  FILE_ALREADY_EXISTS, /**< File already existed */
-  FILE_WRITE_FAILED /**< File write failed */
+  FILE_WRITTEN_SUCCESSFULLY = 0, /**< Successfully completed writing to a file */
+  FILE_ALREADY_EXISTS = -1, /**< File already existed */
+  FILE_WRITE_FAILED = -2, /**< File write failed */
+  FILE_READ_FAILED = -3 /**< File read failed */
 };
 
 /**
@@ -53,7 +64,7 @@ struct File {
   *   @remark All Files must be allocated dynamically. This is basically
   *   a wrapper for g_list_free_full()
   */
-inline void clear_Filelist(GSList *files) {
+inline static void clear_Filelist(GSList *files) {
   g_slist_free_full(files, free);
 }
 
@@ -63,12 +74,18 @@ inline void clear_Filelist(GSList *files) {
   *   @param file File to be added (this must be allocated dynamically)
   *   @remark This is basically a wrapper for
   */
-inline void append_FileList(GSList *files, struct File *file) {
-  g_slist_append(files, file);
+inline static GSList *append_FileList(GSList *files, struct File *file) {
+  return g_slist_append(files, file);
 }
 
 
 /* Local filesystem management */
+/**
+  *   @brief Check whether a file exists
+  *   @param filename To be checked (path)
+  *   @return true if file exists, otherwise false
+  */
+bool file_exists(const char *filename);
 
 
 #endif // end FS_HEADER

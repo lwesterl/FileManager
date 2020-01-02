@@ -227,18 +227,58 @@ int sftp_session_mkdir(Session *session, const char *dir_name) {
   return 0;
 }
 
+int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
+  sftp_dir dir;
+  sftp_attributes attr;
+
+  // Clear old content
+  clear_Filelist(files);
+
+  dir = sftp_opendir(session->sftp, dir_name);
+  if (!dir) {
+    Session_message(session, get_error(ERROR_OPENING_DIRECTORY));
+    return -1;
+  }
+  while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
+    // malloc should not fail
+    struct File *file = malloc(sizeof(struct File));
+    file->name = malloc(strlen(attr->name) + 1);
+    strcpy(file->name, attr->name);
+    file->type = attr->type;
+    file->size = attr->size;
+    file->uid = attr->uid;
+    file->gid = attr->gid;
+    file->owner = malloc(strlen(attr->owner) + 1);
+    strcpy(file->owner, attr->owner);
+    file->group = malloc(strlen(attr->group) + 1);
+    strcpy(file->group, attr->group);
+    file->permissions = attr->permissions;
+    file->createtime = attr->createtime;
+
+    files = append_FileList(files, file);
+    sftp_attributes_free(attr);
+  }
+
+  if (!sftp_dir_eof(dir)) {
+    Session_message(session, get_error(ERROR_LISTING_DIRECTORY));
+    return -1;
+  }
+  sftp_closedir(dir); // No error checking because if this fails there is very little that can be done
+  return 0;
+}
+
 enum FileStatus sftp_session_write_file(Session *session,
                             const char *filename,
                             const void *buff,
-                            size_t len,
-                            bool overwrite)
+                            const size_t len,
+                            const bool overwrite)
 {
   int write_flags = overwrite ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY | O_CREAT;
   int permissions = S_IRWXU;
 
   sftp_file file = sftp_open(session->sftp, filename, write_flags, permissions);
   if (!file) {
-    sftp_file open_test = sftp_open(session->sftp, filename, O_RDONLY, permissions);
+    sftp_file open_test = sftp_open(session->sftp, filename, O_RDONLY, 0);
     if (open_test){
       // File already exists and it is tried to be written without being truncated
       sftp_close(open_test);
@@ -257,7 +297,50 @@ enum FileStatus sftp_session_write_file(Session *session,
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
-  // TODO
-  return 0;
+enum FileStatus sftp_session_read_file( Session *session,
+                                        const char *remote_filename,
+                                        const char *local_filename,
+                                        const bool overwrite)
+{
+  char buffer[MAX_BUF_SIZE];
+  sftp_file file;
+  int nread, nwritten;
+  int fd;
+  int write_flags = overwrite ? O_CREAT | O_WRONLY | O_TRUNC : O_CREAT | O_WRONLY;
+  int permissions = S_IRWXU;
+
+  file = sftp_open(session->sftp, remote_filename, O_RDONLY, 0);
+  if (!file) {
+    Session_message(session, get_error(ERROR_OPENING_FILE));
+    return FILE_WRITE_FAILED;
+  }
+  fd = open(local_filename, write_flags, permissions);
+  if (fd < 0) {
+    if (!overwrite && file_exists(local_filename)) {
+      Session_message(session, get_error(ERROR_FILE_ALREADY_EXISTS));
+      return FILE_ALREADY_EXISTS;
+    }
+    Session_message(session, get_error(ERROR_OPENING_FILE));
+    return FILE_WRITE_FAILED;
+  }
+  while(1) {
+    nread = sftp_read(file, buffer, sizeof(buffer));
+    if (nread == 0) break;
+    else if (nread < 0) {
+      close(fd);
+      sftp_close(file);
+      Session_message(session, get_error(ERROR_READING_FILE));
+      return FILE_READ_FAILED;
+    }
+    nwritten = write(fd, buffer, nread);
+    if (nwritten != nread) {
+      close(fd);
+      sftp_close(file);
+      Session_message(session, get_error(ERROR_WRITING_TO_FILE));
+      return FILE_WRITE_FAILED;
+    }
+  }
+  close(fd); // No error checking because if this fails there is very little that can be done
+  sftp_close(file);
+  return FILE_WRITTEN_SUCCESSFULLY;
 }

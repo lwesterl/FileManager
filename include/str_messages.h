@@ -29,7 +29,10 @@ static const char* const error_strings[] =
   "Error: SFTP session initialization failed\n",
   "Error: file already exists. Do you want to overwrite it?\n",
   "Error: cannot open the file\n",
-  "Error: cannot write to the file\n"
+  "Error: cannot write to the file\n",
+  "Error: cannot open the directory\n",
+  "Error: cannot list the directory\n",
+  "Error: cannot read the file\n"
 };
 
 /** Error enums */
@@ -47,7 +50,10 @@ enum ErrorCode {
   ERROR_SFTP_INITIALIZATION = 10,
   ERROR_FILE_ALREADY_EXISTS = 11,
   ERROR_OPENING_FILE = 12,
-  ERROR_WRITING_TO_FILE = 13
+  ERROR_WRITING_TO_FILE = 13,
+  ERROR_OPENING_DIRECTORY = 14,
+  ERROR_LISTING_DIRECTORY = 15,
+  ERROR_READING_FILE = 16
 };
 
 /**

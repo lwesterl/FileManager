@@ -5,3 +5,8 @@
   */
 
 #include "../include/fs.h"
+
+bool file_exists(const char *filename) {
+  struct stat test;
+  return (stat (filename, &test) == 0);
+}
