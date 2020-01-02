@@ -219,7 +219,8 @@ int init_sftp_session(Session *session) {
 }
 
 enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name) {
-  if(sftp_mkdir(session->sftp, dir_name, S_IRWXU) != SSH_OK) {
+  int permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
+  if(sftp_mkdir(session->sftp, dir_name, permissions) != SSH_OK) {
     if (sftp_get_error(session->sftp) != SSH_FX_FILE_ALREADY_EXISTS) {
       Session_message(session, ssh_get_error(session->session));
       return FILE_WRITTEN_SUCCESSFULLY;
