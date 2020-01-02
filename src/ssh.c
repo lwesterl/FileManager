@@ -218,13 +218,15 @@ int init_sftp_session(Session *session) {
   return 0;
 }
 
-int sftp_session_mkdir(Session *session, const char *dir_name) {
+enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name) {
   if(sftp_mkdir(session->sftp, dir_name, S_IRWXU) != SSH_OK) {
     if (sftp_get_error(session->sftp) != SSH_FX_FILE_ALREADY_EXISTS) {
       Session_message(session, ssh_get_error(session->session));
+      return FILE_WRITTEN_SUCCESSFULLY;
     }
+    return MKDIR_FAILED;
   }
-  return 0;
+  return FILE_WRITTEN_SUCCESSFULLY;
 }
 
 int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
@@ -253,7 +255,7 @@ int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
     file->group = malloc(strlen(attr->group) + 1);
     strcpy(file->group, attr->group);
     file->permissions = attr->permissions;
-    file->createtime = attr->createtime;
+    file->mtime = attr->mtime;
 
     files = append_FileList(files, file);
     sftp_attributes_free(attr);
