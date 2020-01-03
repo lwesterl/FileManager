@@ -10,6 +10,8 @@
 void initUI(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
   session = NULL;
+  remoteFileStore = NULL;
+  localFileStore = NULL;
 
   builder = gtk_builder_new_from_file(LAYOUT_PATH);
 
@@ -32,6 +34,8 @@ void quitUI() {
 
   g_object_unref(builder);
   // Free allocated memory
+  clear_FileStore(remoteFileStore);
+  clear_FileStore(localFileStore);
   free(mainWindow);
   free(connectWindow);
   free(messageWindow);
@@ -128,7 +132,16 @@ void transition_MainWindow() {
   if (init_sftp_session(session) == 0) {
     close_MessageWindow();
     gtk_widget_hide(connectWindow->ConnectDialog);
-    gtk_widget_show_all(mainWindow->TopWindow);
+    // TODO: rework this
+    if ((localFileStore = update_FileStore(localFileStore, "/", false)) != NULL) {
+      gtk_icon_view_set_model((GtkIconView *) mainWindow->LeftFileView, (GtkTreeModel *) localFileStore->listStore);
+      gtk_icon_view_set_text_column((GtkIconView *) mainWindow->LeftFileView, STRING_COLUMN);
+      gtk_icon_view_set_pixbuf_column((GtkIconView *) mainWindow->LeftFileView, PIXBUF_COLUMN);
+      gtk_widget_show_all(mainWindow->TopWindow);
+    } else {
+      Session_message(session, get_error(ERROR_DISPLAYING_LOCAL_FILES));
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
   } else {
     // Some error happened
     transition_MessageWindow(INFO_ERROR, session->message);
@@ -209,5 +222,46 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
     }
   } else {
     close_MessageWindow();
+  }
+}
+
+
+/*  File handling */
+
+FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool remote) {
+  if (!fileStore) {
+    // Create new FileStore
+    fileStore = malloc(sizeof(FileStore));
+    fileStore->listStore = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, GDK_TYPE_PIXBUF);
+    fileStore->files = NULL;
+  }
+  gtk_list_store_clear(fileStore->listStore);
+  // List all the files
+  fileStore->files = remote ? sftp_session_ls_dir(session, fileStore->files, dir_name)
+                            : ls_dir(fileStore->files, dir_name);
+  if (!fileStore->files) {
+    // Some error happened
+    clear_FileStore(fileStore);
+    return NULL;
+  }
+  // Append all entries
+  iterate_FileList(fileStore->files, add_FileStore, (void *) fileStore);
+  return fileStore;
+}
+
+void add_FileStore(struct File *file, void *ptr) {
+    FileStore *fileStore = (FileStore *) ptr;
+    gtk_list_store_append(fileStore->listStore, &(fileStore->it));
+    gtk_list_store_set( fileStore->listStore, &(fileStore->it),
+                        STRING_COLUMN, (GValue *) file->name,
+                        PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
+                        -1);
+}
+
+void clear_FileStore(FileStore *fileStore) {
+  if (fileStore) {
+    gtk_list_store_clear(fileStore->listStore);
+    clear_Filelist(fileStore->files);
+    free(fileStore);
   }
 }

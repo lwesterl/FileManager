@@ -20,6 +20,7 @@
 
 #include "ssh.h"
 #include "fs.h"
+#include "assets.h"
 
 #define LAYOUT_PATH "../layout/FileManagerUI.glade" /** Path to the glade file */
 
@@ -108,6 +109,22 @@ typedef struct {
         GtkWidget *OkButton;  /**< @see FileManagerUI.glade OkButton */
 } MessageWindow;
 
+/**
+  *   @struct FileStore
+  *   @brief Used to store displayed files
+  */
+typedef struct {
+  GtkListStore *listStore; /**< Store displayed files */
+  GtkTreeIter it;  /**< Iterator to the GtkListStore */
+  GSList *files; /**< Linked list storing matching file details, @see File */
+} FileStore;
+
+enum {
+  STRING_COLUMN, /**< Used for GtkListStore, the first column: 0 */
+  PIXBUF_COLUMN, /**< Used for GtkListStore, the second column: 1 */
+  N_COLUMNS /**< Used for GtkListStore, amount of columns: 2 */
+};
+
 
 // Global variables
 GtkBuilder *builder; /** GtkBuilder used to create all the windows */
@@ -115,9 +132,8 @@ MainWindow *mainWindow; /** Pointer to the main window instance */
 MessageWindow *messageWindow; /** Pointer to a message window */
 ConnectWindow *connectWindow; /** Pointer to the connect window */
 Session *session; /**< SSH Session pointer */
-GSList *RemoteFiles; /**< Used to store remote Files, @see File */
-GSList *LocalFiles; /**< Used to store local Files, @see File */
-
+FileStore *remoteFileStore; /**< Used to store displayed elements which correspond to RemoteFiles */
+FileStore *localFileStore; /**< Uses to store displayed elements which correspond to LocalFiles */
 
 /* UI initialization */
 /**
@@ -197,7 +213,6 @@ void QuitButton_action(GtkButton *QuitButton);
   */
 void ConnectButton_action(GtkButton *ConnectButton);
 
-
 /**
   *   @brief Cancel previous action
   *   @param CancelButton Button clicked, unused
@@ -213,6 +228,32 @@ void CancelButton_action(GtkButton *CancelButton);
   *   display info/error messages and to return to connectWindow
   */
 void OkButton_action(GtkButton *OkButton);
+
+
+/*  File handling */
+
+/**
+  *   @brief Update fileStore to contains contents of GSList which holds struct File entries
+  *   @param fileStore FileStore to be updated
+  *   @param dir_name Target directory name (i.e. which files should be displayed)
+  *   @param remote Whether this is a remote filesystem (connect using sftp)
+  *   @return Valid pointer on success, otherwise NULL
+  */
+FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool remote);
+
+/**
+  *   @brief Add entry to FileStore
+  *   @remark This is called from update_FileStore via iterate_FileList
+  *   @param file struct File instance
+  *   @param ptr Pointer to a FileStore passed as void *
+  */
+void add_FileStore(struct File *file, void *ptr);
+
+/**
+  *   @brief Clear fileStore contents and free allocated memory
+  *   @param fileStore To be cleared
+  */
+void clear_FileStore(FileStore *fileStore);
 
 
 

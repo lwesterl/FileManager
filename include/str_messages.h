@@ -32,7 +32,9 @@ static const char* const error_strings[] =
   "Error: cannot write to the file\n",
   "Error: cannot open the directory\n",
   "Error: cannot list the directory\n",
-  "Error: cannot read the file\n"
+  "Error: cannot read the file\n",
+  "Error: cannot display local files\n",
+  "Error: cannot load assets\nExit\n"
 };
 
 /** Error enums */
@@ -53,7 +55,9 @@ enum ErrorCode {
   ERROR_WRITING_TO_FILE = 13,
   ERROR_OPENING_DIRECTORY = 14,
   ERROR_LISTING_DIRECTORY = 15,
-  ERROR_READING_FILE = 16
+  ERROR_READING_FILE = 16,
+  ERROR_DISPLAYING_LOCAL_FILES = 17,
+  ERROR_LOADING_ASSETS = 18
 };
 
 /**
