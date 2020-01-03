@@ -6,11 +6,11 @@
 
 #include "../include/fs.h"
 
-void iterate_FileList(GSList *files, void f (File_t *)) {
+void iterate_FileList(GSList *files, void f (File_t *, void *), void *ptr) {
   GSList *nxt = files;
   do {
     if (nxt) {
-      f((struct File *) nxt->data);
+      f((struct File *) nxt->data, ptr);
     }
   } while ((nxt = nxt->next) != NULL);
 }
@@ -62,7 +62,9 @@ GSList* ls_dir(GSList *files, const char *dir_name) {
       } else {
         filepath = malloc(strlen(dir_name) + strlen(file->name) + 2);
         strcpy(filepath, dir_name);
-        filepath[strlen(filepath)] = '/';
+        unsigned len = strlen(filepath);
+        filepath[len] = '/';
+        filepath[len + 1] = '\0'; // Extremely important to add the terminating null byte
         strcat(filepath, file->name);
       }
 

@@ -100,10 +100,11 @@ inline static GSList *append_FileList(GSList *files, struct File *file) {
 
 /**
   *   @brief Iterate over all File structs in the FileList
-  *   @param files Pointer to a linked list containing File structs
+  *   @param files Pointer to a linked list containing File structs, additionally void * can be passed
   *   @param f pointer to a function which is executed for each entry in the list
+  *   @param ptr Additional pointer which is passed to the function
   */
-void iterate_FileList(GSList *files, void f (File_t*));
+void iterate_FileList(GSList *files, void f (File_t*, void *), void *ptr);
 
 
 /* Local filesystem management */
@@ -136,7 +137,7 @@ int fs_rmdir(const char *dir_name);
   *   @remark Contents of files are cleared first, make sure files content is
   *   dynamically allocated
   */
-GSList  *ls_dir(GSList *files, const char *dir_name);
+GSList *ls_dir(GSList *files, const char *dir_name);
 
 
 #endif // end FS_HEADER
