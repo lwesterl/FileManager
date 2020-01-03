@@ -8,7 +8,7 @@
 
 #include "../include/fs.h"
 
-void print_File(File_t *file) {
+void print_File(File_t *file, __attribute__((unused)) void *ptr) {
   printf("Filename: %s \t", file->name);
   printf("owner: %s, group: %s\t", file->owner, file->group);
   printf("type: %d, size: %ld\n", file->type, file->size);
@@ -24,7 +24,7 @@ int main() {
   GSList *files = NULL;
   assert((files = ls_dir(files, ".")));
   printf("files length: %d\n", g_slist_length(files));
-  iterate_FileList(files, print_File);
+  iterate_FileList(files, print_File, NULL);
 
   assert(fs_rmdir(dir_name) == 0);
 
