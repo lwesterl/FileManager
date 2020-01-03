@@ -6,7 +6,7 @@ INC = ../include
 CC = gcc
 CFLAGS = -Wall -pedantic -Wextra -g $(shell pkg-config --cflags gtk+-3.0)
 LDFLAGS = -lssh -rdynamic $(shell pkg-config --libs gtk+-3.0)
-OBJ = ssh.o UI.o str_messages.o fs.o
+OBJ = ssh.o UI.o str_messages.o fs.o assets.o
 EXE = main
 
 .PHONY: run clean clean-objects
