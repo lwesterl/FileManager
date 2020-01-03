@@ -230,7 +230,7 @@ enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name) {
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
+GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
   sftp_dir dir;
   sftp_attributes attr;
 
@@ -240,7 +240,7 @@ int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
   dir = sftp_opendir(session->sftp, dir_name);
   if (!dir) {
     Session_message(session, get_error(ERROR_OPENING_DIRECTORY));
-    return -1;
+    return NULL;
   }
   while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
     // malloc should not fail
@@ -264,10 +264,11 @@ int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name) {
 
   if (!sftp_dir_eof(dir)) {
     Session_message(session, get_error(ERROR_LISTING_DIRECTORY));
-    return -1;
+    clear_Filelist(files);
+    return NULL;
   }
   sftp_closedir(dir); // No error checking because if this fails there is very little that can be done
-  return 0;
+  return files;
 }
 
 enum FileStatus sftp_session_write_file(Session *session,

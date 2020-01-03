@@ -131,9 +131,9 @@ enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name);
   *   @param files Linked list where the directory content is appended to,
   *   old content is removed (needs to be dynamically allocated)
   *   @param dir_name Path of the directory to be listed
-  *   @return 0 on success, -1 on error (sets corresponding error message, @see Session_message)
+  *   @return Valid pointer on success, NULL on error (sets corresponding error message, @see Session_message)
   */
-int sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name);
+GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name);
 
 /**
   *   @brief Write to remote file using sftp
