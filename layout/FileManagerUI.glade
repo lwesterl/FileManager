@@ -286,7 +286,6 @@
                                   <object class="GtkScrolledWindow" id="LeftFileScrollWindow">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="hscrollbar_policy">never</property>
                                     <property name="shadow_type">in</property>
                                     <child>
                                       <object class="GtkViewport" id="LeftScrollWindowViewPort">
@@ -425,7 +424,6 @@
                                   <object class="GtkScrolledWindow" id="RightFileScrollWindow">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="hscrollbar_policy">never</property>
                                     <property name="shadow_type">in</property>
                                     <child>
                                       <object class="GtkViewport" id="RightScrollWindowViewPort">
