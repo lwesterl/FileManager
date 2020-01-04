@@ -129,19 +129,21 @@ void transition_MessageWindow(const enum MessageType messageType, const char *me
 
 void transition_MainWindow() {
   // Establish SFTP session
-  if (init_sftp_session(session) == 0) {
+  if ((get_remote_home_dir(session) == 0) && (init_sftp_session(session) == 0)) {
     close_MessageWindow();
     gtk_widget_hide(connectWindow->ConnectDialog);
-    // TODO: rework this
-    if ((localFileStore = update_FileStore(localFileStore, "/", false)) != NULL) {
-      gtk_icon_view_set_model((GtkIconView *) mainWindow->LeftFileView, (GtkTreeModel *) localFileStore->listStore);
-      gtk_icon_view_set_text_column((GtkIconView *) mainWindow->LeftFileView, STRING_COLUMN);
-      gtk_icon_view_set_pixbuf_column((GtkIconView *) mainWindow->LeftFileView, PIXBUF_COLUMN);
-      gtk_widget_show_all(mainWindow->TopWindow);
+    char *home = get_home_dir();
+    if (home) {
+      local_pwd = change_pwd(local_pwd, home); // This hard-copies the content
+      free(home);
     } else {
-      Session_message(session, get_error(ERROR_DISPLAYING_LOCAL_FILES));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      local_pwd = change_pwd(local_pwd, "/");
     }
+    remote_pwd = session->home_dir ? change_pwd(remote_pwd, session->home_dir) : change_pwd(remote_pwd, "/");
+    if (show_FileStore(local_pwd, false) != 0) return;
+    gtk_label_set_text((GtkLabel *) mainWindow->LeftInnerFrameLabel, local_pwd);
+    if (show_FileStore(remote_pwd, true) != 0) return;
+    gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
   } else {
     // Some error happened
     transition_MessageWindow(INFO_ERROR, session->message);
@@ -264,4 +266,31 @@ void clear_FileStore(FileStore *fileStore) {
     clear_Filelist(fileStore->files);
     free(fileStore);
   }
+}
+
+int show_FileStore(const char *pwd, bool remote) {
+  if (remote) {
+    if ((remoteFileStore = update_FileStore(remoteFileStore, pwd, true)) != NULL) {
+      gtk_icon_view_set_model((GtkIconView *) mainWindow->RightFileView, (GtkTreeModel *) remoteFileStore->listStore);
+      gtk_icon_view_set_text_column((GtkIconView *) mainWindow->RightFileView, STRING_COLUMN);
+      gtk_icon_view_set_pixbuf_column((GtkIconView *) mainWindow->RightFileView, PIXBUF_COLUMN);
+      gtk_widget_show_all(mainWindow->TopWindow);
+    } else {
+      Session_message(session, get_error(ERROR_DISPLAYING_REMOTE_FILES));
+      transition_MessageWindow(INFO_ERROR, session->message);
+      return -1;
+    }
+  } else {
+    if ((localFileStore = update_FileStore(localFileStore, pwd, false)) != NULL) {
+      gtk_icon_view_set_model((GtkIconView *) mainWindow->LeftFileView, (GtkTreeModel *) localFileStore->listStore);
+      gtk_icon_view_set_text_column((GtkIconView *) mainWindow->LeftFileView, STRING_COLUMN);
+      gtk_icon_view_set_pixbuf_column((GtkIconView *) mainWindow->LeftFileView, PIXBUF_COLUMN);
+      gtk_widget_show_all(mainWindow->TopWindow);
+    } else {
+      Session_message(session, get_error(ERROR_DISPLAYING_LOCAL_FILES));
+      transition_MessageWindow(INFO_ERROR, session->message);
+      return -1;
+    }
+  }
+  return 0;
 }

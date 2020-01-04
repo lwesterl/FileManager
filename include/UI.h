@@ -255,6 +255,14 @@ void add_FileStore(struct File *file, void *ptr);
   */
 void clear_FileStore(FileStore *fileStore);
 
+/**
+  *   @brief Update FileStore to show correct files
+  *   @param pwd Present working directory, @see assets.h
+  *   @param remote Whether the corresponding FileStore is remote or local
+  *   @return 0 on success, -1 on error (sets error using Session_message and
+  *   transitions to MessageWindow)
+  */
+int show_FileStore(const char *pwd, bool remote);
 
 
 #endif // end UI_HEADER
