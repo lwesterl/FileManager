@@ -34,7 +34,10 @@ static const char* const error_strings[] =
   "Error: cannot list the directory\n",
   "Error: cannot read the file\n",
   "Error: cannot display local files\n",
-  "Error: cannot load assets\nExit\n"
+  "Error: cannot load assets\nExit\n",
+  "Error: cannot display remote files\n",
+  "Error: cannot establish channelled connection to remote\n"
+  "Error: executing command on remote failed\n"
 };
 
 /** Error enums */
@@ -57,7 +60,10 @@ enum ErrorCode {
   ERROR_LISTING_DIRECTORY = 15,
   ERROR_READING_FILE = 16,
   ERROR_DISPLAYING_LOCAL_FILES = 17,
-  ERROR_LOADING_ASSETS = 18
+  ERROR_LOADING_ASSETS = 18,
+  ERROR_DISPLAYING_REMOTE_FILES = 19,
+  SSH_CHANNEL_ERROR = 20,
+  SSH_REMOTE_COMMAND_ERROR = 21
 };
 
 /**

@@ -50,7 +50,6 @@ inline static const GdkPixbuf *get_Icon(const enum Icon icon) {
   *   @brief Get Icon, image based on file type
   *   @param file_type File type spesification
   *   @return const pointer to a GdkPixbuf
-  *   TODO: make apropriate
   */
 inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type) {
   return  file_type == 4 || file_type == SSH_FILEXFER_TYPE_DIRECTORY ?
