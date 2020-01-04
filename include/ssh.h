@@ -35,6 +35,7 @@ typedef struct {
   char *message; /**< Used to hold info about authentication etc. */
   unsigned char *hash; /**< Remote server public key hash */
   size_t hash_len; /**< Length of the hash */
+  char *home_dir; /**< Home dir for on the remote server */
 } Session;
 
 
@@ -105,6 +106,18 @@ enum AuthenticationAction authenticate_key(Session *session, const enum Authenti
   *   @return AUTHENTICATION_OK or AUTHENTICATION_ERROR
   */
 enum AuthenticationAction authenticate_password(Session *session, const char *password);
+
+
+/*  Executing remote commands */
+
+/**
+  *   @brief Get remote home directory
+  *   @param Already established ssh session
+  *   @return 0 on success, -1 on error (sets corresponding error message)
+  *   @remark This should be called only once per session
+  */
+int get_remote_home_dir(Session *session);
+
 
 /* SFTP session */
 

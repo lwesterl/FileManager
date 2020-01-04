@@ -26,6 +26,7 @@ Session *create_session(const char *username, const char *remote) {
     session->message = NULL;
     session->hash = NULL;
     session->sftp = NULL;
+    session->home_dir = NULL;
     session->session = ssh_new();
     if (!session->session) {
       perror(get_error(SSH_CREATE_ERROR));
@@ -54,6 +55,9 @@ int end_session(Session *session) {
     ssh_free(session->session);
     if (session->message) {
       free(session->message);
+    }
+    if (session->home_dir) {
+      free(session->home_dir);
     }
     free(session);
     return 0;
@@ -199,6 +203,46 @@ enum AuthenticationAction authenticate_password(Session *session, const char *pa
     return AUTHENTICATION_ERROR;
   }
   return AUTHENTICATION_OK;
+}
+
+
+// Executing remote commands
+
+int get_remote_home_dir(Session *session) {
+  char buffer[250] = {0};
+  int nread, tot = 0;
+  ssh_channel channel;
+  channel = ssh_channel_new(session->session);
+  if (!channel) {
+    Session_message(session, get_error(SSH_CHANNEL_ERROR));
+    return -1;
+  }
+  if (ssh_channel_open_session(channel) != SSH_OK) {
+    Session_message(session, get_error(SSH_CHANNEL_ERROR));
+    ssh_channel_free(channel);
+    return -1;
+  }
+  if (ssh_channel_request_exec(channel, "echo $HOME") != SSH_OK) {
+    ssh_channel_close(channel);
+    ssh_channel_free(channel);
+    Session_message(session, get_error(SSH_REMOTE_COMMAND_ERROR));
+    return -1;
+  }
+  do {
+    nread = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
+    tot += nread;
+  } while (nread > 0);
+  if (nread < 0) {
+    ssh_channel_close(channel);
+    ssh_channel_free(channel);
+    Session_message(session, get_error(SSH_REMOTE_COMMAND_ERROR));
+    return -1;
+  }
+  buffer[tot - 1] = '\0'; // The last char is EOF/EOT, overwrite it with a null byte
+  if (session->home_dir) free(session->home_dir);
+  session->home_dir = malloc(strlen(buffer) + 1);
+  strcpy(session->home_dir, buffer);
+  return 0;
 }
 
 
