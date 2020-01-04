@@ -8,11 +8,13 @@
 #define ASSETS_HEADER
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <libssh/sftp.h>
 
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #include "fs.h" // bool
 
@@ -51,7 +53,8 @@ inline static const GdkPixbuf *get_Icon(const enum Icon icon) {
   *   TODO: make apropriate
   */
 inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type) {
-  return file_type == 4 ? iconImages[FOLDER_ICON] : iconImages[FILE_ICON];
+  return  file_type == 4 || file_type == SSH_FILEXFER_TYPE_DIRECTORY ?
+          iconImages[FOLDER_ICON] : iconImages[FILE_ICON];
 }
 
 /**
@@ -60,5 +63,20 @@ inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type) {
   *   @return true if init was succesful, otherwise false
   */
 bool init_assets();
+
+/**
+  *   @brief Clear allocated assets
+  *   @remark Call this just before the program exits
+  */
+void clear_assets();
+
+/**
+  *   @brief Change pwd
+  *   @param pwd Current working directory
+  *   @param new_pwd New working directory
+  *   @return Pointer to the updated pwd
+  *   @remark This should be only used to update local_pwd and remote_pwd
+  */
+char *change_pwd(char *pwd, const char *new_pwd);
 
 #endif // end ASSETS_HEADER

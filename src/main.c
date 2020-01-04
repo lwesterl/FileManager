@@ -8,11 +8,12 @@
 #include "../include/assets.h"
 
 int main(int argc, char *argv[]) {
-  
+
   if(!init_assets()) {
     perror(get_error(ERROR_LOADING_ASSETS));
     return EXIT_FAILURE;
   }
   initUI(argc, argv);
+  clear_assets();
   return EXIT_SUCCESS;
 }
