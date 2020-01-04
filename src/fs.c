@@ -97,3 +97,13 @@ GSList* ls_dir(GSList *files, const char *dir_name) {
   }
   return files;
 }
+
+char *get_home_dir() {
+  char *home = NULL;
+  struct passwd *pw = getpwuid(getuid());
+  if (pw) {
+    home = malloc(strlen(pw->pw_dir) + 1);
+    if (home) strcpy(home, pw->pw_dir);
+  }
+  return home;
+}

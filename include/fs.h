@@ -139,5 +139,11 @@ int fs_rmdir(const char *dir_name);
   */
 GSList *ls_dir(GSList *files, const char *dir_name);
 
+/**
+  *   @brief Get home directory for the user
+  *   @return Pointer to dynamically allocated memory, this must be freed elsewhere.
+  *   In case of an error, returns NULL
+  */
+char *get_home_dir();
 
 #endif // end FS_HEADER
