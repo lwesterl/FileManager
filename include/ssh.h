@@ -132,6 +132,7 @@ enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name);
   *   old content is removed (needs to be dynamically allocated)
   *   @param dir_name Path of the directory to be listed
   *   @return Valid pointer on success, NULL on error (sets corresponding error message, @see Session_message)
+  *   @remark This won't list . and .. because those are not subfolders or files
   */
 GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_name);
 
