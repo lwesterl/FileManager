@@ -41,6 +41,7 @@ GSList* ls_dir(GSList *files, const char *dir_name) {
   struct stat st = {0};
   struct dirent *dt = NULL;
   clear_Filelist(files);
+  files = NULL;
 
   dir = opendir(dir_name);
   if (!dir) {

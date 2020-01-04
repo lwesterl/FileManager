@@ -280,6 +280,7 @@ GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_nam
 
   // Clear old content
   clear_Filelist(files);
+  files = NULL;
 
   dir = sftp_opendir(session->sftp, dir_name);
   if (!dir) {

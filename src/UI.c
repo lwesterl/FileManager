@@ -152,10 +152,34 @@ void transition_MainWindow() {
 
 
 /* Button actions */
-void LeftFileHomeButton_action(__attribute__((unused)) GtkButton *LeftFileHomeButton) {}
+
+void LeftFileHomeButton_action(__attribute__((unused)) GtkButton *LeftFileHomeButton) {
+  char *home = get_home_dir();
+  if (home) {
+    local_pwd = change_pwd(local_pwd, home);
+    free(home);
+    if (show_FileStore(local_pwd, false) == 0) {
+      gtk_label_set_text((GtkLabel *) mainWindow->LeftInnerFrameLabel, local_pwd);
+    } else {
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
+  }
+}
+
 void LeftFileBackButton_action(__attribute__((unused)) GtkButton *LeftFileBackButton) {}
 void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolderButton) {}
-void RightFileHomeButton_action(__attribute__((unused)) GtkButton *RightFileHomeButton) {}
+
+void RightFileHomeButton_action(__attribute__((unused)) GtkButton *RightFileHomeButton) {
+  if (session->home_dir) {
+    remote_pwd = change_pwd(remote_pwd, session->home_dir);
+    if (show_FileStore(remote_pwd, true) == 0) {
+      gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
+    } else {
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
+  }
+}
+
 void RightFileBackButton_action(__attribute__((unused)) GtkButton *RightFileBackButton) {}
 void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFolderButton) {}
 
