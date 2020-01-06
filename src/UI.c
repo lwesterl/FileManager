@@ -55,7 +55,7 @@ void init_MainWindow() {
   mainWindow->LeftFileSelectFrame = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileSelectFrame"));
   mainWindow->LeftFileSelectFrameAlignment = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileSelectFrameAlignment"));
   mainWindow->LeftFileScrollWindow = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileScrollWindow"));
-  mainWindow->LeftFileScrollWindowViewPort = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileScrollWindowViewPort"));
+  mainWindow->LeftScrollWindowViewPort = GTK_WIDGET(gtk_builder_get_object(builder, "LeftScrollWindowViewPort"));
   mainWindow->LeftFileView = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileView"));
   mainWindow->LeftFileSelectGrid = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileSelectGrid"));
   mainWindow->LeftFileHomeButton = GTK_WIDGET(gtk_builder_get_object(builder, "LeftFileHomeButton"));
@@ -251,6 +251,35 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
   }
 }
 
+gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute__((unused)) gpointer user_data) {
+  if (event->type == GDK_2BUTTON_PRESS) {
+    printf("2nd button press\n");
+    GdkEventButton *press = (GdkEventButton *) event;
+    GtkTreePath *path = gtk_icon_view_get_path_at_pos((GtkIconView *) widget, press->x, press->y);
+    gchar *filename;
+    unsigned filetype;
+    GtkTreeIter it;
+        if (widget == mainWindow->LeftFileView) {
+      gtk_tree_model_get_iter((GtkTreeModel *) localFileStore->listStore, &it, path);
+      gtk_tree_model_get((GtkTreeModel *) localFileStore->listStore, &it,
+                                          STRING_COLUMN, &filename,
+                                          UINT_COLUMN, &filetype,
+                                          -1);
+    } else {
+      gtk_tree_model_get_iter((GtkTreeModel *) remoteFileStore->listStore, &it, path);
+      gtk_tree_model_get((GtkTreeModel *) remoteFileStore->listStore, &it,
+                                          STRING_COLUMN, &filename,
+                                          UINT_COLUMN, &filetype,
+                                          -1);
+    }
+
+    printf("filename: %s, filetype: %d\n", (char *) filename, filetype);
+    g_free(filename);
+    return TRUE;
+  }
+  return FALSE;
+}
+
 
 /*  File handling */
 
@@ -258,7 +287,7 @@ FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool rem
   if (!fileStore) {
     // Create new FileStore
     fileStore = malloc(sizeof(FileStore));
-    fileStore->listStore = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, GDK_TYPE_PIXBUF);
+    fileStore->listStore = gtk_list_store_new(N_COLUMNS, G_TYPE_STRING, GDK_TYPE_PIXBUF, G_TYPE_UINT);
     fileStore->files = NULL;
   }
   gtk_list_store_clear(fileStore->listStore);
@@ -281,6 +310,7 @@ void add_FileStore(struct File *file, void *ptr) {
     gtk_list_store_set( fileStore->listStore, &(fileStore->it),
                         STRING_COLUMN, (GValue *) file->name,
                         PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
+                        UINT_COLUMN, file->type,
                         -1);
 }
 
@@ -292,7 +322,7 @@ void clear_FileStore(FileStore *fileStore) {
   }
 }
 
-int show_FileStore(const char *pwd, bool remote) {
+int show_FileStore(const char *pwd, const bool remote) {
   if (remote) {
     if ((remoteFileStore = update_FileStore(remoteFileStore, pwd, true)) != NULL) {
       gtk_icon_view_set_model((GtkIconView *) mainWindow->RightFileView, (GtkTreeModel *) remoteFileStore->listStore);

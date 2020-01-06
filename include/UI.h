@@ -43,7 +43,7 @@ typedef struct {
               GtkWidget *LeftFileSelectFrame; /**< @see FileManagerUI.glade LeftFileSelectFrame */
                 GtkWidget *LeftFileSelectFrameAlignment;  /**< @see FileManagerUI.glade LeftFileSelectFrameAlignment */
                   GtkWidget *LeftFileScrollWindow;  /**< @see FileManagerUI.glade LeftFileScrollWindow */
-                    GtkWidget *LeftFileScrollWindowViewPort;  /**< @see FileManagerUI.glade LeftFileScrollWindowViewPort */
+                    GtkWidget *LeftScrollWindowViewPort;  /**< @see FileManagerUI.glade LeftFileScrollWindowViewPort */
                       GtkWidget *LeftFileView;  /**< @see FileManagerUI.glade LeftFileView */
                 GtkWidget *LeftFileSelectGrid;  /**< @see FileManagerUI.glade LeftFileSelectGrid */
                   GtkWidget *LeftFileHomeButton;  /**< @see FileManagerUI.glade LeftFileHomeButton */
@@ -122,7 +122,8 @@ typedef struct {
 enum {
   STRING_COLUMN, /**< Used for GtkListStore, the first column: 0 */
   PIXBUF_COLUMN, /**< Used for GtkListStore, the second column: 1 */
-  N_COLUMNS /**< Used for GtkListStore, amount of columns: 2 */
+  UINT_COLUMN, /**< Used for GtkListStore, the third column: 2 */
+  N_COLUMNS /**< Used for GtkListStore, amount of columns: 3 */
 };
 
 
@@ -192,9 +193,20 @@ void transition_MainWindow();
 
 
 /* Button actions */
+
+/**
+  *   @brief Update localFileStore to show files in local home directory
+  *   @param LeftFileHomeButton Not used
+  */
 void LeftFileHomeButton_action(GtkButton *LeftFileHomeButton);
+
 void LeftFileBackButton_action(GtkButton *LeftFileBackButton);
 void LeftNewFolderButton_action(GtkButton *LeftNewFolderButton);
+
+/**
+  *   @brief Update remoteFileStore to show files in remote home directory
+  *   @param RightFileHomeButton Not used
+  */
 void RightFileHomeButton_action(GtkButton *RightFileHomeButton);
 void RightFileBackButton_action(GtkButton *RightFileBackButton);
 void RightNewFolderButton_action(GtkButton *RightNewFolderButton);
@@ -229,6 +241,15 @@ void CancelButton_action(GtkButton *CancelButton);
   */
 void OkButton_action(GtkButton *OkButton);
 
+/**
+  *   @brief Called after a FileView icon is pressed
+  *   @param widget Which widget (FileView created the event)
+  *   @param event Emitted after icon is pressed
+  *   @param user_data Possible addition data, not used
+  *   @return TRUE when the event should not be further processed, otherwise FALSE
+  */
+gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, gpointer user_data);
+
 
 /*  File handling */
 
@@ -239,7 +260,7 @@ void OkButton_action(GtkButton *OkButton);
   *   @param remote Whether this is a remote filesystem (connect using sftp)
   *   @return Valid pointer on success, otherwise NULL
   */
-FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool remote);
+FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, const bool remote);
 
 /**
   *   @brief Add entry to FileStore
