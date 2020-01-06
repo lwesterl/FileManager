@@ -47,13 +47,21 @@ inline static const GdkPixbuf *get_Icon(const enum Icon icon) {
 }
 
 /**
+  *   @brief Check whether a file type indicates a folder
+  *   @param file_type To be checked
+  *   @return true if the file type corresponds to a folder
+  */
+inline static bool is_folder(const uint8_t file_type) {
+  return ((file_type == 4) || (file_type == SSH_FILEXFER_TYPE_DIRECTORY) || (file_type == SSH_FILEXFER_TYPE_SYMLINK));
+}
+
+/**
   *   @brief Get Icon, image based on file type
   *   @param file_type File type spesification
   *   @return const pointer to a GdkPixbuf
   */
 inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type) {
-  return  file_type == 4 || file_type == SSH_FILEXFER_TYPE_DIRECTORY ?
-          iconImages[FOLDER_ICON] : iconImages[FILE_ICON];
+  return  is_folder(file_type) ? iconImages[FOLDER_ICON] : iconImages[FILE_ICON];
 }
 
 /**
