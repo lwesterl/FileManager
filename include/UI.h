@@ -200,6 +200,10 @@ void transition_MainWindow();
   */
 void LeftFileHomeButton_action(GtkButton *LeftFileHomeButton);
 
+/**
+  *   @brief Update localFileStore to show files in the parent directory
+  *   @param LeftFileBackButton Not used
+  */
 void LeftFileBackButton_action(GtkButton *LeftFileBackButton);
 void LeftNewFolderButton_action(GtkButton *LeftNewFolderButton);
 
@@ -208,6 +212,11 @@ void LeftNewFolderButton_action(GtkButton *LeftNewFolderButton);
   *   @param RightFileHomeButton Not used
   */
 void RightFileHomeButton_action(GtkButton *RightFileHomeButton);
+
+/**
+  *   @brief Update remoteFileStore to show files in the parent directory
+  *   @param RightFileBackButton Not used
+  */
 void RightFileBackButton_action(GtkButton *RightFileBackButton);
 void RightNewFolderButton_action(GtkButton *RightNewFolderButton);
 
