@@ -86,4 +86,22 @@ void clear_assets();
   */
 char *change_pwd(char *pwd, const char *new_pwd);
 
+/**
+  *   @brief Change pwd back to parent directory if possible
+  *   @remark Changing pwd back is not possible if the pwd is already root.
+  *   This is intended to be called either for local_pwd or remote_pwd
+  *   @param pwd Current working directory
+  *   @return Pointer to the updated pwd
+  */
+char *cd_back_pwd(char *pwd);
+
+/**
+  *   @brief Change pwd to another directory
+  *   @param pwd Current working directory, must be dynamically allocated
+  *   @param dir_name Directory where the pwd is changed to
+  *   @return Pointer to the updated pwd: dynamically allocated, must be freed
+  *   @remark This is intended to be called either for local_pwd or remote_pwd
+  */
+char *cd_enter_pwd(char *pwd, const char *dir_name);
+
 #endif // end ASSETS_HEADER
