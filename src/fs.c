@@ -48,53 +48,51 @@ GSList* ls_dir(GSList *files, const char *dir_name) {
     return NULL;
   }
   while ((dt = readdir(dir)) != NULL) {
-    if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
-      struct File *file = malloc(sizeof(struct File));
-      file->name = malloc(strlen(dt->d_name) + 1);
-      strcpy(file->name, dt->d_name);
-      file->type = dt->d_type;
+    struct File *file = malloc(sizeof(struct File));
+    file->name = malloc(strlen(dt->d_name) + 1);
+    strcpy(file->name, dt->d_name);
+    file->type = dt->d_type;
 
-      char *filepath = NULL;
-      if (dir_name[strlen(dir_name) -1] == '/') {
-        // No need to set slash to the end of dir_name
-        filepath = malloc(strlen(dir_name) + strlen(file->name) + 1);
-        strcpy(filepath, dir_name);
-        strcat(filepath, file->name);
-      } else {
-        filepath = malloc(strlen(dir_name) + strlen(file->name) + 2);
-        strcpy(filepath, dir_name);
-        unsigned len = strlen(filepath);
-        filepath[len] = '/';
-        filepath[len + 1] = '\0'; // Extremely important to add the terminating null byte
-        strcat(filepath, file->name);
-      }
-
-      if (stat(filepath, &st) != 0) {
-        free(file);
-        free(filepath);
-        clear_Filelist(files);
-        return NULL;
-      }
-      free(filepath);
-      file->size = st.st_size;
-      file->uid = st.st_uid;
-      file->gid = st.st_gid;
-      file->owner = NULL;
-      file->group = NULL;
-      file->permissions = st.st_mode;
-      file->mtime = st.st_mtim.tv_sec;
-      struct passwd *pw = getpwuid(st.st_uid);
-      if (pw) {
-        file->owner = malloc(strlen(pw->pw_name) + 1);
-        strcpy(file->owner, pw->pw_name);
-      }
-      struct group *gr = getgrgid(st.st_gid);
-      if (gr) {
-        file->group = malloc(strlen(gr->gr_name) + 1);
-        strcpy(file->group, gr->gr_name);
-      }
-      files = append_FileList(files, file);
+    char *filepath = NULL;
+    if (dir_name[strlen(dir_name) -1] == '/') {
+      // No need to set slash to the end of dir_name
+      filepath = malloc(strlen(dir_name) + strlen(file->name) + 1);
+      strcpy(filepath, dir_name);
+      strcat(filepath, file->name);
+    } else {
+      filepath = malloc(strlen(dir_name) + strlen(file->name) + 2);
+      strcpy(filepath, dir_name);
+      unsigned len = strlen(filepath);
+      filepath[len] = '/';
+      filepath[len + 1] = '\0'; // Extremely important to add the terminating null byte
+      strcat(filepath, file->name);
     }
+
+    if (stat(filepath, &st) != 0) {
+      free(file);
+      free(filepath);
+      clear_Filelist(files);
+      return NULL;
+    }
+    free(filepath);
+    file->size = st.st_size;
+    file->uid = st.st_uid;
+    file->gid = st.st_gid;
+    file->owner = NULL;
+    file->group = NULL;
+    file->permissions = st.st_mode;
+    file->mtime = st.st_mtim.tv_sec;
+    struct passwd *pw = getpwuid(st.st_uid);
+    if (pw) {
+      file->owner = malloc(strlen(pw->pw_name) + 1);
+      strcpy(file->owner, pw->pw_name);
+    }
+    struct group *gr = getgrgid(st.st_gid);
+    if (gr) {
+      file->group = malloc(strlen(gr->gr_name) + 1);
+      strcpy(file->group, gr->gr_name);
+    }
+    files = append_FileList(files, file);
   }
   return files;
 }

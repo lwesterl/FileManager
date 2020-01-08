@@ -288,26 +288,24 @@ GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_nam
     return NULL;
   }
   while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
-    // Skip . and .. which are not subfolders or files
-    if ((strcmp(attr->name, ".") != 0) && (strcmp(attr->name, "..") != 0)) {
-      // malloc should not fail
-      struct File *file = malloc(sizeof(struct File));
-      file->name = malloc(strlen(attr->name) + 1);
-      strcpy(file->name, attr->name);
-      file->type = attr->type;
-      file->size = attr->size;
-      file->uid = attr->uid;
-      file->gid = attr->gid;
-      file->owner = malloc(strlen(attr->owner) + 1);
-      strcpy(file->owner, attr->owner);
-      file->group = malloc(strlen(attr->group) + 1);
-      strcpy(file->group, attr->group);
-      file->permissions = attr->permissions;
-      file->mtime = attr->mtime;
+    // malloc should not fail
+    struct File *file = malloc(sizeof(struct File));
+    file->name = malloc(strlen(attr->name) + 1);
+    strcpy(file->name, attr->name);
+    file->type = attr->type;
+    file->size = attr->size;
+    file->uid = attr->uid;
+    file->gid = attr->gid;
+    file->owner = malloc(strlen(attr->owner) + 1);
+    strcpy(file->owner, attr->owner);
+    file->group = malloc(strlen(attr->group) + 1);
+    strcpy(file->group, attr->group);
+    file->permissions = attr->permissions;
+    file->mtime = attr->mtime;
 
-      files = append_FileList(files, file);
-      sftp_attributes_free(attr);
-    }
+    files = append_FileList(files, file);
+    sftp_attributes_free(attr);
+
   }
 
   if (!sftp_dir_eof(dir)) {
