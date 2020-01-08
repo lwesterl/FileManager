@@ -158,21 +158,13 @@ void LeftFileHomeButton_action(__attribute__((unused)) GtkButton *LeftFileHomeBu
   if (home) {
     local_pwd = change_pwd(local_pwd, home);
     free(home);
-    if (show_FileStore(local_pwd, false) == 0) {
-      gtk_label_set_text((GtkLabel *) mainWindow->LeftInnerFrameLabel, local_pwd);
-    } else {
-      transition_MessageWindow(INFO_ERROR, session->message);
-    }
+    update_FileView(false);
   }
 }
 
 void LeftFileBackButton_action(__attribute__((unused)) GtkButton *LeftFileBackButton) {
   local_pwd = cd_back_pwd(local_pwd);
-  if (show_FileStore(local_pwd, false) == 0) {
-    gtk_label_set_text((GtkLabel *) mainWindow->LeftInnerFrameLabel, local_pwd);
-  } else {
-    transition_MessageWindow(INFO_ERROR, session->message);
-  }
+  update_FileView(false);
 }
 
 void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolderButton) {}
@@ -180,21 +172,13 @@ void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolder
 void RightFileHomeButton_action(__attribute__((unused)) GtkButton *RightFileHomeButton) {
   if (session->home_dir) {
     remote_pwd = change_pwd(remote_pwd, session->home_dir);
-    if (show_FileStore(remote_pwd, true) == 0) {
-      gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
-    } else {
-      transition_MessageWindow(INFO_ERROR, session->message);
-    }
+    update_FileView(true);
   }
 }
 
 void RightFileBackButton_action(__attribute__((unused)) GtkButton *RightFileBackButton) {
   remote_pwd = cd_back_pwd(remote_pwd);
-  if (show_FileStore(remote_pwd, true) == 0) {
-    gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
-  } else {
-    transition_MessageWindow(INFO_ERROR, session->message);
-  }
+  update_FileView(true);
 }
 
 void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFolderButton) {}
@@ -269,29 +253,40 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
 
 gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute__((unused)) gpointer user_data) {
   if (event->type == GDK_2BUTTON_PRESS) {
-    printf("2nd button press\n");
     GdkEventButton *press = (GdkEventButton *) event;
     GtkTreePath *path = gtk_icon_view_get_path_at_pos((GtkIconView *) widget, press->x, press->y);
-    gchar *filename;
-    unsigned filetype;
-    GtkTreeIter it;
-        if (widget == mainWindow->LeftFileView) {
-      gtk_tree_model_get_iter((GtkTreeModel *) localFileStore->listStore, &it, path);
-      gtk_tree_model_get((GtkTreeModel *) localFileStore->listStore, &it,
-                                          STRING_COLUMN, &filename,
-                                          UINT_COLUMN, &filetype,
-                                          -1);
-    } else {
-      gtk_tree_model_get_iter((GtkTreeModel *) remoteFileStore->listStore, &it, path);
-      gtk_tree_model_get((GtkTreeModel *) remoteFileStore->listStore, &it,
-                                          STRING_COLUMN, &filename,
-                                          UINT_COLUMN, &filetype,
-                                          -1);
-    }
+    if (path) {
+      gchar *filename;
+      unsigned filetype;
+      GtkTreeIter it;
+      if (widget == mainWindow->LeftFileView) {
+        gtk_tree_model_get_iter((GtkTreeModel *) localFileStore->listStore, &it, path);
+        gtk_tree_model_get((GtkTreeModel *) localFileStore->listStore, &it,
+                                            STRING_COLUMN, &filename,
+                                            UINT_COLUMN, &filetype,
+                                            -1);
+        if (is_folder(filetype)) {
+          // Change directory
+          local_pwd = cd_enter_pwd(local_pwd, filename);
+          update_FileView(false);
+        }
 
-    printf("filename: %s, filetype: %d\n", (char *) filename, filetype);
-    g_free(filename);
-    return TRUE;
+      } else {
+        gtk_tree_model_get_iter((GtkTreeModel *) remoteFileStore->listStore, &it, path);
+        gtk_tree_model_get((GtkTreeModel *) remoteFileStore->listStore, &it,
+                                            STRING_COLUMN, &filename,
+                                            UINT_COLUMN, &filetype,
+                                            -1);
+        if (is_folder(filetype)) {
+          // Change directory
+          remote_pwd = cd_enter_pwd(remote_pwd, filename);
+          update_FileView(true);
+        }
+      }
+
+      g_free(filename);
+      return TRUE;
+    }
   }
   return FALSE;
 }
@@ -322,12 +317,14 @@ FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool rem
 
 void add_FileStore(struct File *file, void *ptr) {
     FileStore *fileStore = (FileStore *) ptr;
-    gtk_list_store_append(fileStore->listStore, &(fileStore->it));
-    gtk_list_store_set( fileStore->listStore, &(fileStore->it),
-                        STRING_COLUMN, (GValue *) file->name,
-                        PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
-                        UINT_COLUMN, file->type,
-                        -1);
+    if ((strcmp(file->name, ".") != 0) && (strcmp(file->name, "..") != 0)) {
+      gtk_list_store_append(fileStore->listStore, &(fileStore->it));
+      gtk_list_store_set( fileStore->listStore, &(fileStore->it),
+                          STRING_COLUMN, (GValue *) file->name,
+                          PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
+                          UINT_COLUMN, file->type,
+                          -1);
+    }
 }
 
 void clear_FileStore(FileStore *fileStore) {
@@ -363,4 +360,20 @@ int show_FileStore(const char *pwd, const bool remote) {
     }
   }
   return 0;
+}
+
+void update_FileView(bool remote) {
+  if (remote) {
+    if (show_FileStore(remote_pwd, true) == 0) {
+      gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
+    } else {
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
+  } else {
+    if (show_FileStore(local_pwd, false) == 0) {
+      gtk_label_set_text((GtkLabel *) mainWindow->LeftInnerFrameLabel, local_pwd);
+    } else {
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
+  }
 }

@@ -273,7 +273,8 @@ FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, const bo
 
 /**
   *   @brief Add entry to FileStore
-  *   @remark This is called from update_FileStore via iterate_FileList
+  *   @remark This is called from update_FileStore via iterate_FileList. This
+  *   does not add "." and ".." filenames to FileStore
   *   @param file struct File instance
   *   @param ptr Pointer to a FileStore passed as void *
   */
@@ -293,6 +294,13 @@ void clear_FileStore(FileStore *fileStore);
   *   transitions to MessageWindow)
   */
 int show_FileStore(const char *pwd, bool remote);
+
+/**
+  *   @brief Update FileViews to show updated FileStores
+  *   @remark This is basically only a wrapper for show_FileStore
+  *   @param remote Whether to update remote or local FileStore
+  */
+void update_FileView(bool remote);
 
 
 #endif // end UI_HEADER
