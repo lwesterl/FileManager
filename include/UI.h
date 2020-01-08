@@ -65,7 +65,39 @@ typedef struct {
                   GtkWidget *RightFileHomeButton; /**< @see FileManagerUI.glade RightFileHomeButton */
                   GtkWidget *RightFileBackButton; /**< @see FileManagerUI.glade RightFileBackButton */
                   GtkWidget *RightNewFolderButton;  /**< @see FileManagerUI.glade RightNewFolderButton */
+
+        GtkMenu *ContextMenu; /**< Context menu opened by right click, @see ContextMenuActions */
+        GdkRectangle *ContextMenuRect; /**< GdkRectangle which specifies location of the ContextMenu */
+        GtkWidget *ContextMenuEmitter; /**< Store the widget that emitted ContextMenu popup, LeftFileView or RightFileView */
 } MainWindow;
+
+
+/**
+  *   @enum ContextMenuActions
+  *   @brief Available actions in context menus
+  */
+enum ContextMenuActions {
+  COPY, /**< Copy selected files */
+  PASTE, /**< Paste selected files */
+  CREATE_FOLDER /**< Create new folder */
+};
+
+/**< String names for ContextMenuActions */
+static const char* const ContextMenuAction_names[] =
+{
+  "Copy",
+  "Paste",
+  "Create new folder"
+};
+
+/**
+  *   @brief Get matching string for ContextMenuActions
+  *   @param action ContextMenuAction
+  *   @return Correct entry from ContextMenuAction_names
+  */
+static inline const char* get_ContextMenuAction_name(const enum ContextMenuActions action) {
+  return ContextMenuAction_names[action];
+}
 
 /**
   *   @struct ConnectWindow
@@ -191,6 +223,14 @@ void transition_MessageWindow(const enum MessageType messageType, const char *me
   */
 void transition_MainWindow();
 
+/**
+  *   @brief Transition/show ContextMenu
+  *   @remark On the first transition the context menu is also initialized
+  *   @param widget LeftFileView or RightFileView from which the event was emitted
+  *   @param event Event which triggered the transition, callback event
+  */
+gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event);
+
 
 /* Button actions */
 
@@ -258,6 +298,13 @@ void OkButton_action(GtkButton *OkButton);
   *   @return TRUE when the event should not be further processed, otherwise FALSE
   */
 gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, gpointer user_data);
+
+/**
+  *   @brief Action which is attached as callback to ContextMenuItems
+  *   @param menuItem Item which emitted the action
+  *   @param user_data Additional data, not used
+  */
+void ContextMenuItem_action(GtkMenuItem *menuItem, gpointer user_data);
 
 
 /*  File handling */
