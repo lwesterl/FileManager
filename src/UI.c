@@ -36,7 +36,7 @@ void quitUI() {
   // Free allocated memory
   clear_FileStore(remoteFileStore);
   clear_FileStore(localFileStore);
-  if (mainWindow->ContextMenuRect) free(mainWindow->ContextMenuRect);
+  clear_ContextMenu();
   free(mainWindow);
   free(connectWindow);
   free(messageWindow);
@@ -78,13 +78,31 @@ void init_MainWindow() {
   mainWindow->RightFileHomeButton = GTK_WIDGET(gtk_builder_get_object(builder, "RightFileHomeButton"));
   mainWindow->RightFileBackButton = GTK_WIDGET(gtk_builder_get_object(builder, "RightFileBackButton"));
   mainWindow->RightNewFolderButton = GTK_WIDGET(gtk_builder_get_object(builder, "RightNewFolderButton"));
-  mainWindow->ContextMenu = NULL;
-  mainWindow->ContextMenuRect = NULL;
-  mainWindow->ContextMenuEmitter = NULL;
+  init_ContextMenu();
 
   g_signal_connect(mainWindow->TopWindow, "destroy", G_CALLBACK(quitUI), NULL);
   g_signal_connect_swapped(mainWindow->LeftFileView, "button_press_event", G_CALLBACK(transition_ContextMenu), mainWindow->LeftFileView);
   g_signal_connect_swapped(mainWindow->RightFileView, "button_press_event", G_CALLBACK(transition_ContextMenu), mainWindow->RightFileView);
+}
+
+void init_ContextMenu() {
+  mainWindow->contextMenu = malloc(sizeof(ContextMenu));
+  mainWindow->contextMenu->ContextMenuRect = NULL;
+  mainWindow->contextMenu->ContextMenuEmitter = NULL;
+  mainWindow->contextMenu->Menu = (GtkMenu *) gtk_menu_new();
+  gtk_menu_attach_to_widget(mainWindow->contextMenu->Menu, mainWindow->TopWindow, NULL);
+  mainWindow->contextMenu->copy = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(COPY));
+  g_signal_connect(mainWindow->contextMenu->copy, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->copy);
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->copy, 0, 1, 0, 1);
+  mainWindow->contextMenu->paste = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(PASTE));
+  g_signal_connect(mainWindow->contextMenu->paste, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->paste);
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->paste, 0, 1, 1, 2);
+  mainWindow->contextMenu->rename = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(RENAME));
+  g_signal_connect(mainWindow->contextMenu->rename, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->rename);
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->rename, 0, 1, 2, 3);
+  mainWindow->contextMenu->create_folder = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(CREATE_FOLDER));
+  g_signal_connect(mainWindow->contextMenu->create_folder, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->create_folder);
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->create_folder, 0, 1, 3, 4);
 }
 
 void init_ConnectWindow() {
@@ -120,6 +138,14 @@ void init_MessageWindow() {
 void close_MessageWindow() {
   gtk_widget_hide(messageWindow->MessageDialog);
   gtk_label_set_text((GtkLabel*) messageWindow->MessageLabel, "");
+}
+
+void clear_ContextMenu() {
+  if (mainWindow->contextMenu) {
+    if (mainWindow->contextMenu->ContextMenuRect) free(mainWindow->contextMenu->ContextMenuRect);
+    free(mainWindow->contextMenu);
+    mainWindow->contextMenu = NULL;
+  }
 }
 
 /* Window transitions */
@@ -160,27 +186,27 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
   GdkEventButton *button;
   if (event->type == GDK_BUTTON_PRESS) {
     button = (GdkEventButton *) event;
+    GtkTreePath *path = NULL;
+    bool selected = false;
     if (button->button == GDK_BUTTON_SECONDARY) {
-      if (mainWindow->ContextMenu == NULL) {
-        mainWindow->ContextMenu = (GtkMenu *) gtk_menu_new();
-        gtk_menu_attach_to_widget(mainWindow->ContextMenu, mainWindow->TopWindow, NULL);
-        GtkMenuItem *item = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(COPY));
-        g_signal_connect(item, "button_press_event", G_CALLBACK(ContextMenuItem_action), item);
-        gtk_menu_attach(mainWindow->ContextMenu, (GtkWidget *) item, 0, 1, 0, 1);
-        item = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(PASTE));
-        g_signal_connect(item, "button_press_event", G_CALLBACK(ContextMenuItem_action), item);
-        gtk_menu_attach(mainWindow->ContextMenu, (GtkWidget *) item, 0, 1, 1, 2);
-        item = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(CREATE_FOLDER));
-        g_signal_connect(item, "button_press_event", G_CALLBACK(ContextMenuItem_action), item);
-        gtk_menu_attach(mainWindow->ContextMenu, (GtkWidget *) item, 0, 1, 2, 3);
+      // Update selection
+      // TODO multi-select support
+      if ((path = gtk_icon_view_get_path_at_pos(GTK_ICON_VIEW(widget), button->x, button->y))) {
+        gtk_icon_view_unselect_all(GTK_ICON_VIEW(widget));
+        gtk_icon_view_select_path(GTK_ICON_VIEW(widget), path);
+        gtk_tree_path_free(path);
+        selected = true;
+      } else {
+        gtk_icon_view_unselect_all(GTK_ICON_VIEW(widget));
       }
-      mainWindow->ContextMenuEmitter = widget; // Store for further use
-      gtk_widget_show_all((GtkWidget *) mainWindow->ContextMenu);
+      show_ContextMenu_buttons(selected);
+      mainWindow->contextMenu->ContextMenuEmitter = widget; // Store for further use
+      gtk_widget_show_all((GtkWidget *) mainWindow->contextMenu->Menu);
       int width, height;
       int scroll_compensation = 0;
       GtkAdjustment *adj;
       gtk_window_get_size((GtkWindow *) mainWindow->TopWindow, &width, &height);
-      if (mainWindow->ContextMenuRect) free(mainWindow->ContextMenuRect);
+      if (mainWindow->contextMenu->ContextMenuRect) free(mainWindow->contextMenu->ContextMenuRect);
       GdkRectangle *rect = malloc(sizeof(GdkRectangle));
       // The event contains coordinates in FileView viewport and the ContextMenu has to be set to TopWindow coordinates
       rect->x = widget == mainWindow->LeftFileView ? button->x : (int) ((float)button->x + 0.5f * (float)width);
@@ -194,11 +220,19 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
       rect->y = button->y;
       rect->width = 50;
       rect->height = 80;
-      gtk_menu_popup_at_rect(mainWindow->ContextMenu, gtk_widget_get_window(mainWindow->TopWindow), rect, 0, 0, event);
+      gtk_menu_popup_at_rect(mainWindow->contextMenu->Menu, gtk_widget_get_window(mainWindow->TopWindow), rect, 0, 0, event);
       return TRUE;
     }
   }
   return FALSE;
+}
+
+void show_ContextMenu_buttons(bool file_selected) {
+  gboolean selected = (gboolean) file_selected;
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->copy), selected);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->paste), !selected);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->rename), selected);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->create_folder), !selected);
 }
 
 
@@ -343,10 +377,12 @@ gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute_
 }
 
 void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpointer user_data) {
-  if (strcmp(gtk_menu_item_get_label(menuItem), get_ContextMenuAction_name(COPY)) == 0) {
+  if (menuItem == mainWindow->contextMenu->copy) {
     printf("Copy\n");
-  } else if (strcmp(gtk_menu_item_get_label(menuItem), get_ContextMenuAction_name(PASTE)) == 0) {
+  } else if (menuItem == mainWindow->contextMenu->paste) {
     printf("Paste\n");
+  } else if (menuItem == mainWindow->contextMenu->rename) {
+    printf("Rename\n");
   } else {
     printf("Create new folder\n");
   }

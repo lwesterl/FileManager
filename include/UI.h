@@ -27,6 +27,50 @@
 // UI top-level windows
 
 /**
+  *   @struct ContextMenu
+  *   @brief Contains context menu related elements
+  */
+typedef struct {
+  GtkMenu *Menu; /**< Context menu opened by right click, @see ContextMenuActions */
+  GdkRectangle *ContextMenuRect; /**< GdkRectangle which specifies location of the ContextMenu */
+  GtkWidget *ContextMenuEmitter; /**< Store the widget that emitted ContextMenu popup, LeftFileView or RightFileView */
+
+  GtkMenuItem *copy; /**< GtkMenuItem triggers file copying operation */
+  GtkMenuItem *paste; /**< GtkMenuItem triggers file pasting operation */
+  GtkMenuItem *rename; /**< GtkMenuItem triggers file rename operation */
+  GtkMenuItem *create_folder; /**< GtkMenuItem triggers create folder operation */
+} ContextMenu;
+
+/**
+  *   @enum ContextMenuActions
+  *   @brief Available actions in context menus
+  */
+enum ContextMenuActions {
+  COPY, /**< Copy selected files */
+  PASTE, /**< Paste selected files */
+  RENAME, /**< Rename selected files */
+  CREATE_FOLDER /**< Create new folder */
+};
+
+/**< String names for ContextMenuActions */
+static const char* const ContextMenuAction_names[] =
+{
+  "Copy",
+  "Paste",
+  "Rename",
+  "Create new folder"
+};
+
+/**
+  *   @brief Get matching string for ContextMenuActions
+  *   @param action ContextMenuAction
+  *   @return Correct entry from ContextMenuAction_names
+  */
+static inline const char* get_ContextMenuAction_name(const enum ContextMenuActions action) {
+  return ContextMenuAction_names[action];
+}
+
+/**
   *   @struct MainWindow
   *   @brief Contains TopWindow and its child UI elements
   */
@@ -66,38 +110,8 @@ typedef struct {
                   GtkWidget *RightFileBackButton; /**< @see FileManagerUI.glade RightFileBackButton */
                   GtkWidget *RightNewFolderButton;  /**< @see FileManagerUI.glade RightNewFolderButton */
 
-        GtkMenu *ContextMenu; /**< Context menu opened by right click, @see ContextMenuActions */
-        GdkRectangle *ContextMenuRect; /**< GdkRectangle which specifies location of the ContextMenu */
-        GtkWidget *ContextMenuEmitter; /**< Store the widget that emitted ContextMenu popup, LeftFileView or RightFileView */
+      ContextMenu *contextMenu;
 } MainWindow;
-
-
-/**
-  *   @enum ContextMenuActions
-  *   @brief Available actions in context menus
-  */
-enum ContextMenuActions {
-  COPY, /**< Copy selected files */
-  PASTE, /**< Paste selected files */
-  CREATE_FOLDER /**< Create new folder */
-};
-
-/**< String names for ContextMenuActions */
-static const char* const ContextMenuAction_names[] =
-{
-  "Copy",
-  "Paste",
-  "Create new folder"
-};
-
-/**
-  *   @brief Get matching string for ContextMenuActions
-  *   @param action ContextMenuAction
-  *   @return Correct entry from ContextMenuAction_names
-  */
-static inline const char* get_ContextMenuAction_name(const enum ContextMenuActions action) {
-  return ContextMenuAction_names[action];
-}
 
 /**
   *   @struct ConnectWindow
@@ -189,6 +203,12 @@ void quitUI();
 void init_MainWindow();
 
 /**
+  *   @brief Init ContextMenu
+  *   @remark Intended to be called only once from init_MainWindow
+  */
+void init_ContextMenu();
+
+/**
   *   @brief Init connectWindow
   *   @remark Intended to be called only once from initUI
   */
@@ -205,6 +225,12 @@ void init_MessageWindow();
   *   @brief Close messageWindow
   */
 void close_MessageWindow();
+
+/**
+  *   @brief Clear ContextMenu
+  *   @remark Intended to be called from quitUI
+  */
+void clear_ContextMenu();
 
 
 /* Window transitions */
@@ -230,6 +256,12 @@ void transition_MainWindow();
   *   @param event Event which triggered the transition, callback event
   */
 gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event);
+
+/**
+  *   @brief Show correct ContextMenu buttons
+  *   @param file_selected Boolean whether context menu is show for a selected file
+  */
+void show_ContextMenu_buttons(bool file_selected);
 
 
 /* Button actions */
