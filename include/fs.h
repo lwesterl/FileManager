@@ -22,14 +22,7 @@
 #include <pwd.h>
 #include <grp.h>
 
-/**
-  *   @enum bool
-  *   @brief Booleans: true and false
-  */
-typedef enum {
-  false = 0, /**< false Boolean */
-  true = 1 /**< true Boolean */
-} bool;
+#include "assets.h"
 
 
 /**
@@ -108,6 +101,7 @@ void iterate_FileList(GSList *files, void f (File_t*, void *), void *ptr);
 
 
 /* Local filesystem management */
+
 /**
   *   @brief Check whether a file exists
   *   @param filename To be checked (path)
@@ -125,9 +119,10 @@ enum FileStatus fs_mkdir(const char *dir_name);
 /**
   *   @brief Remove an empty directory
   *   @param dir_name Path to the directory to be removed
-  *   @remark This is just a wrapper for rmdir
+  *   @param recursive Whether to remove the dir recursively, or only an empty dir
+  *   @return 0 on success, < 0 on error
   */
-int fs_rmdir(const char *dir_name);
+int fs_rmdir(const char *dir_name, bool recursive);
 
 /**
   *   @brief List directory content to linked list of struct File
@@ -145,5 +140,13 @@ GSList *ls_dir(GSList *files, const char *dir_name);
   *   In case of an error, returns NULL
   */
 char *get_home_dir();
+
+/**
+  *   @brief Rename file if the new_name is not already used
+  *   @param old_name Filepath to the current file location
+  *   @param new_name Filepath to a new file location
+  *   @return FILE_WRITTEN_SUCCESSFULLY, FILE_ALREADY_EXISTS or FILE_WRITE_FAILED
+  */
+enum FileStatus fs_rename(const char *old_name, const char *new_name);
 
 #endif // end FS_HEADER

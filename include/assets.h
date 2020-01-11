@@ -16,7 +16,15 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#include "fs.h" // bool
+
+/**
+  *   @enum bool
+  *   @brief Booleans: true and false
+  */
+typedef enum {
+  false = 0, /**< false Boolean */
+  true = 1 /**< true Boolean */
+} bool;
 
 /**
   *   @enum Icon

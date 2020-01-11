@@ -32,7 +32,58 @@ enum FileStatus fs_mkdir(const char *dir_name) {
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-int fs_rmdir(const char *dir_name) {
+int fs_rmdir(const char *dir_name, bool recursive) {
+  if (recursive) {
+      DIR *dir = NULL;
+      struct dirent *dt = NULL;
+
+      dir = opendir(dir_name);
+      if (!dir) {
+        return -1;
+      }
+      int ret;
+      while ((dt = readdir(dir)) != NULL) {
+        if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
+
+          char *filepath = NULL;
+          if (dir_name[strlen(dir_name) -1] == '/') {
+            // No need to set slash to the end of dir_name
+            filepath = malloc(strlen(dir_name) + strlen(dt->d_name) + 1);
+            if (!filepath) {
+              closedir(dir);
+              return -1;
+            }
+            strcpy(filepath, dir_name);
+            strcat(filepath, dt->d_name);
+          } else {
+            filepath = malloc(strlen(dir_name) + strlen(dt->d_name) + 2);
+            if (!filepath) {
+              closedir(dir);
+              return -1;
+            }
+            strcpy(filepath, dir_name);
+            unsigned len = strlen(filepath);
+            filepath[len] = '/';
+            filepath[len + 1] = '\0'; // Extremely important to add the terminating null byte
+            strcat(filepath, dt->d_name);
+          }
+
+          if (is_folder(dt->d_type)) {
+            ret = fs_rmdir(filepath, true);
+          } else {
+            // Remove single file
+            ret = unlink(filepath);
+          }
+          free(filepath);
+          if (ret < 0) {
+            closedir(dir);
+            return ret; // Some error, return immediately
+          }
+        }
+      }
+      closedir(dir);
+  }
+  // Remove the current dir
   return rmdir(dir_name);
 }
 
@@ -105,4 +156,10 @@ char *get_home_dir() {
     if (home) strcpy(home, pw->pw_dir);
   }
   return home;
+}
+
+enum FileStatus fs_rename(const char *old_name, const char *new_name) {
+  if (file_exists(new_name)) return FILE_ALREADY_EXISTS;
+  if (rename(old_name, new_name) == 0) return FILE_WRITTEN_SUCCESSFULLY;
+  return FILE_WRITE_FAILED;
 }
