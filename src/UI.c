@@ -177,11 +177,20 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
       mainWindow->ContextMenuEmitter = widget; // Store for further use
       gtk_widget_show_all((GtkWidget *) mainWindow->ContextMenu);
       int width, height;
+      int scroll_compensation = 0;
+      GtkAdjustment *adj;
       gtk_window_get_size((GtkWindow *) mainWindow->TopWindow, &width, &height);
       if (mainWindow->ContextMenuRect) free(mainWindow->ContextMenuRect);
       GdkRectangle *rect = malloc(sizeof(GdkRectangle));
       // The event contains coordinates in FileView viewport and the ContextMenu has to be set to TopWindow coordinates
       rect->x = widget == mainWindow->LeftFileView ? button->x : (int) ((float)button->x + 0.5f * (float)width);
+      if (widget == mainWindow->LeftFileView) {
+        adj = gtk_scrolled_window_get_hadjustment((GtkScrolledWindow *) mainWindow->LeftFileScrollWindow);
+      } else {
+        adj = gtk_scrolled_window_get_hadjustment((GtkScrolledWindow *) mainWindow->RightFileScrollWindow);
+      }
+      scroll_compensation = (int) gtk_adjustment_get_value(adj);
+      rect->x -= scroll_compensation; // This takes account the amount of view scrolling
       rect->y = button->y;
       rect->width = 50;
       rect->height = 80;
