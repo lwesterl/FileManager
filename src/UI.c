@@ -18,6 +18,7 @@ void initUI(int argc, char *argv[]) {
   init_MainWindow();
   init_ConnectWindow();
   init_MessageWindow();
+  init_PopOverDialog();
   gtk_builder_connect_signals(builder, NULL);
   gtk_widget_show_all(connectWindow->ConnectDialog);
 
@@ -40,6 +41,7 @@ void quitUI() {
   free(mainWindow);
   free(connectWindow);
   free(messageWindow);
+  free(popOverDialog);
 }
 
 void init_MainWindow() {
@@ -140,6 +142,26 @@ void close_MessageWindow() {
   gtk_label_set_text((GtkLabel*) messageWindow->MessageLabel, "");
 }
 
+void init_PopOverDialog() {
+  popOverDialog = malloc(sizeof(PopOverDialog));
+  popOverDialog->PopOverDialog = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialog"));
+  popOverDialog->PopOverDialogTopBox = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogTopBox"));
+  popOverDialog->PopOverDialogBox = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogBox"));
+  popOverDialog->PopOverDialogEntry = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogEntry"));
+  popOverDialog->PopOverDialogButtonBox = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogButtonBox"));
+  popOverDialog->PopOverDialogCancelButton = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogCancelButton"));
+  popOverDialog->PopOverDialogOkButton = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogOkButton"));
+  popOverDialog->PopOverDialogLabel = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogLabel"));
+
+  g_signal_connect(popOverDialog->PopOverDialog, "destroy", G_CALLBACK(close_PopOverDialog), NULL);
+}
+
+void close_PopOverDialog() {
+  gtk_widget_hide(popOverDialog->PopOverDialog);
+  gtk_label_set_text((GtkLabel *) popOverDialog->PopOverDialogLabel, "");
+  gtk_entry_set_text((GtkEntry *) popOverDialog->PopOverDialogEntry, "");
+}
+
 void clear_ContextMenu() {
   if (mainWindow->contextMenu) {
     if (mainWindow->contextMenu->ContextMenuRect) free(mainWindow->contextMenu->ContextMenuRect);
@@ -217,6 +239,7 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
       }
       scroll_compensation = (int) gtk_adjustment_get_value(adj);
       rect->x -= scroll_compensation; // This takes account the amount of view scrolling
+      // TODO fix also y scrolling
       rect->y = button->y;
       rect->width = 50;
       rect->height = 80;
@@ -252,7 +275,10 @@ void LeftFileBackButton_action(__attribute__((unused)) GtkButton *LeftFileBackBu
   update_FileView(false);
 }
 
-void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolderButton) {}
+void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolderButton) {
+  mainWindow->contextMenu->ContextMenuEmitter = mainWindow->LeftFileView;
+  create_folder();
+}
 
 void RightFileHomeButton_action(__attribute__((unused)) GtkButton *RightFileHomeButton) {
   if (session->home_dir) {
@@ -266,7 +292,10 @@ void RightFileBackButton_action(__attribute__((unused)) GtkButton *RightFileBack
   update_FileView(true);
 }
 
-void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFolderButton) {}
+void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFolderButton) {
+  mainWindow->contextMenu->ContextMenuEmitter = mainWindow->RightFileView;
+  create_folder();
+}
 
 void QuitButton_action(__attribute__((unused)) GtkButton *QuitButton) {
   quitUI();
@@ -382,10 +411,19 @@ void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpoin
   } else if (menuItem == mainWindow->contextMenu->paste) {
     printf("Paste\n");
   } else if (menuItem == mainWindow->contextMenu->rename) {
-    printf("Rename\n");
+    rename_file();
   } else {
-    printf("Create new folder\n");
+    create_folder();
   }
+}
+
+void PopOverDialogCancelButton_action(__attribute__((unused)) GtkButton *PopOverDialogCancelButton) {
+  close_PopOverDialog();
+}
+
+void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDialogOkButton) {
+  // TODO action itself
+  close_PopOverDialog();
 }
 
 
@@ -473,4 +511,16 @@ void update_FileView(bool remote) {
       transition_MessageWindow(INFO_ERROR, session->message);
     }
   }
+}
+
+void rename_file() {
+  printf("Rename file\n");
+  popOverDialog->type = POPOVER_RENAME;
+  gtk_widget_show_all(popOverDialog->PopOverDialog);
+}
+
+void create_folder() {
+  printf("Create folder\n");
+  popOverDialog->type = POPOVER_CREATE_FOLDER;
+  gtk_widget_show_all(popOverDialog->PopOverDialog);
 }

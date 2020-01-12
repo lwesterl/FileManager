@@ -156,6 +156,32 @@ typedef struct {
 } MessageWindow;
 
 /**
+  *   @enum PopOverType
+  *   @brief Specifies type of PopOverDialog created
+  */
+enum PopOverType {
+  POPOVER_RENAME, /**< PopOver used for renaming a file */
+  POPOVER_CREATE_FOLDER /**< PopOver used for creating a new folder */
+};
+
+/**
+  *   @struct PopOverWindow
+  *   @brief Contains PopOver and its child elements
+  */
+typedef struct {
+  GtkWidget *PopOverDialog;
+    GtkWidget *PopOverDialogTopBox;
+      GtkWidget *PopOverDialogBox;
+        GtkWidget *PopOverDialogEntry;
+        GtkWidget *PopOverDialogButtonBox;
+          GtkWidget *PopOverDialogCancelButton;
+          GtkWidget *PopOverDialogOkButton;
+          GtkWidget *PopOverDialogLabel;
+
+    enum PopOverType type;
+} PopOverDialog;
+
+/**
   *   @struct FileStore
   *   @brief Used to store displayed files
   */
@@ -174,10 +200,11 @@ enum {
 
 
 // Global variables
-GtkBuilder *builder; /** GtkBuilder used to create all the windows */
-MainWindow *mainWindow; /** Pointer to the main window instance */
-MessageWindow *messageWindow; /** Pointer to a message window */
-ConnectWindow *connectWindow; /** Pointer to the connect window */
+GtkBuilder *builder; /**< GtkBuilder used to create all the windows */
+MainWindow *mainWindow; /**< Pointer to the main window instance */
+MessageWindow *messageWindow; /**< Pointer to a message window */
+ConnectWindow *connectWindow; /**< Pointer to the connect window */
+PopOverDialog *popOverDialog; /**< Pointer to a PopOverDialog struct */
 Session *session; /**< SSH Session pointer */
 FileStore *remoteFileStore; /**< Used to store displayed elements which correspond to RemoteFiles */
 FileStore *localFileStore; /**< Uses to store displayed elements which correspond to LocalFiles */
@@ -225,6 +252,17 @@ void init_MessageWindow();
   *   @brief Close messageWindow
   */
 void close_MessageWindow();
+
+/**
+  *   @brief Init popOverDialog
+  *   @remark Inteded to be called only once from initUI
+  */
+void init_PopOverDialog();
+
+/**
+  *   @brief Close popOverDialog
+  */
+void close_PopOverDialog();
 
 /**
   *   @brief Clear ContextMenu
@@ -277,6 +315,14 @@ void LeftFileHomeButton_action(GtkButton *LeftFileHomeButton);
   *   @param LeftFileBackButton Not used
   */
 void LeftFileBackButton_action(GtkButton *LeftFileBackButton);
+
+/**
+  *   @brief Calls create_folder and sets first appropriate
+  *   mainWindow->contextMenu->ContextMenuEmitter
+  *   @param LeftNewFolderButton Not used
+  *   @remark This way create_folder can handle this button press identical
+  *   to create folder operation emitted through ContextMenu
+  */
 void LeftNewFolderButton_action(GtkButton *LeftNewFolderButton);
 
 /**
@@ -290,6 +336,14 @@ void RightFileHomeButton_action(GtkButton *RightFileHomeButton);
   *   @param RightFileBackButton Not used
   */
 void RightFileBackButton_action(GtkButton *RightFileBackButton);
+
+/**
+  *   @brief Calls create_folder and sets first appropriate
+  *   mainWindow->contextMenu->ContextMenuEmitter
+  *   @param RightNewFolderButton Not used
+  *   @remark This way create_folder can handle this button press identical
+  *   to create folder operation emitted through ContextMenu
+  */
 void RightNewFolderButton_action(GtkButton *RightNewFolderButton);
 
 /**
@@ -338,6 +392,19 @@ gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, gpointer use
   */
 void ContextMenuItem_action(GtkMenuItem *menuItem, gpointer user_data);
 
+/**
+  *   @brief Cancel rename/create folder operation
+  *   @details This will hide the PopOver by calling close_PopOverWindow
+  *   @param PopOverDialogCancelButton Clicked button, not used
+  */
+void PopOverDialogCancelButton_action(GtkButton *PopOverDialogCancelButton);
+
+/**
+  *   @brief Finish file rename or create folder operation
+  *   @param PopOverDialogOkButton Button clicked, not used
+  */
+void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
+
 
 /*  File handling */
 
@@ -380,6 +447,16 @@ int show_FileStore(const char *pwd, bool remote);
   *   @param remote Whether to update remote or local FileStore
   */
 void update_FileView(bool remote);
+
+/**
+  *   @brief Rename file, creates PopOverWindow for renaming
+  */
+void rename_file();
+
+/**
+  *   @brief Create new folder, creates PopOverWindow for creating folder
+  */
+void create_folder();
 
 
 #endif // end UI_HEADER
