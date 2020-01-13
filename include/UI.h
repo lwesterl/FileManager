@@ -169,16 +169,18 @@ enum PopOverType {
   *   @brief Contains PopOver and its child elements
   */
 typedef struct {
-  GtkWidget *PopOverDialog;
-    GtkWidget *PopOverDialogTopBox;
-      GtkWidget *PopOverDialogBox;
-        GtkWidget *PopOverDialogEntry;
-        GtkWidget *PopOverDialogButtonBox;
-          GtkWidget *PopOverDialogCancelButton;
-          GtkWidget *PopOverDialogOkButton;
-          GtkWidget *PopOverDialogLabel;
+  GtkWidget *PopOverDialog; /**< Top-level pop-up dialog, @see FileManagerUI.glade PopOverDialog */
+    GtkWidget *PopOverDialogTopBox; /**< @see FileManagerUI.glade PopOverDialogTopBox */
+      GtkWidget *PopOverDialogBox; /**< @see FileManagerUI.glade PopOverDialogBox */
+        GtkWidget *PopOverDialogEntry; /**< @see FileManagerUI.glade PopOverDialogEntry */
+        GtkWidget *PopOverDialogButtonBox; /**< @see FileManagerUI.glade PopOverDialogButtonBox */
+          GtkWidget *PopOverDialogCancelButton; /**< @see FileManagerUI.glade PopOverDialogCancelButton */
+          GtkWidget *PopOverDialogOkButton; /**< @see FileManagerUI.glade PopOverDialogOkButton */
+          GtkWidget *PopOverDialogLabel; /**< @see FileManagerUI.glade PopOverDialogLabel */
 
-    enum PopOverType type;
+    enum PopOverType type; /**< Type of the pop-up */
+    char *message; /**< Message displayed in PopOverDialogLabel */
+    char *filename; /**< Name of the file which is renamed, set to NULL when not used */
 } PopOverDialog;
 
 /**
@@ -262,7 +264,7 @@ void init_PopOverDialog();
 /**
   *   @brief Close popOverDialog
   */
-void close_PopOverDialog();
+gboolean close_PopOverDialog();
 
 /**
   *   @brief Clear ContextMenu
@@ -450,6 +452,8 @@ void update_FileView(bool remote);
 
 /**
   *   @brief Rename file, creates PopOverWindow for renaming
+  *   @remark FileView (mainWindow->contextMenu->ContextMenuEmitter) must have
+  *   exactly one element selected prior entering this function
   */
 void rename_file();
 

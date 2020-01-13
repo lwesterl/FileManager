@@ -153,13 +153,24 @@ void init_PopOverDialog() {
   popOverDialog->PopOverDialogOkButton = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogOkButton"));
   popOverDialog->PopOverDialogLabel = GTK_WIDGET(gtk_builder_get_object(builder, "PopOverDialogLabel"));
 
-  g_signal_connect(popOverDialog->PopOverDialog, "destroy", G_CALLBACK(close_PopOverDialog), NULL);
+  g_signal_connect(popOverDialog->PopOverDialog, "delete-event", G_CALLBACK(close_PopOverDialog), NULL);
+  popOverDialog->message = NULL;
+  popOverDialog->filename = NULL;
 }
 
-void close_PopOverDialog() {
+gboolean close_PopOverDialog() {
   gtk_widget_hide(popOverDialog->PopOverDialog);
   gtk_label_set_text((GtkLabel *) popOverDialog->PopOverDialogLabel, "");
   gtk_entry_set_text((GtkEntry *) popOverDialog->PopOverDialogEntry, "");
+  if (popOverDialog->message) {
+    free(popOverDialog->message);
+    popOverDialog->message = NULL;
+  }
+  if (popOverDialog->filename) {
+    free(popOverDialog->filename);
+    popOverDialog->filename = NULL;
+  }
+  return TRUE;
 }
 
 void clear_ContextMenu() {
@@ -425,7 +436,28 @@ void PopOverDialogCancelButton_action(__attribute__((unused)) GtkButton *PopOver
 }
 
 void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDialogOkButton) {
-  // TODO action itself
+  if (popOverDialog->type == POPOVER_RENAME) {
+    char *new_path, *old_path;
+    const char *new_name = (const char *) gtk_entry_get_text(GTK_ENTRY(popOverDialog->PopOverDialogEntry));
+    if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+      new_path = construct_filepath(local_pwd, new_name);
+      old_path = construct_filepath(local_pwd, popOverDialog->filename);
+      enum FileStatus result = fs_rename(old_path, new_path);
+      if (result < 0) {
+        Session_message(session, get_error(ERROR_RENAMING_FILE));
+        transition_MessageWindow(INFO_ERROR, session->message);
+      } else {
+        transition_MainWindow();
+      }
+    } else {
+      new_path = construct_filepath(remote_pwd, new_name);
+      old_path = construct_filepath(remote_pwd, popOverDialog->filename);
+      // TODO rename over ssh
+    }
+    free(new_path);
+    free(old_path);
+  } else {
+  }
   close_PopOverDialog();
 }
 
@@ -517,13 +549,41 @@ void update_FileView(bool remote) {
 }
 
 void rename_file() {
-  printf("Rename file\n");
+  GList *selected = gtk_icon_view_get_selected_items(GTK_ICON_VIEW(mainWindow->contextMenu->ContextMenuEmitter));
+  const char *msg = "Rename: ";
+  gchar *filename;
+  if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), selected->data);
+    gtk_tree_model_get(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), STRING_COLUMN, &filename, -1);
+
+  } else {
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(remoteFileStore->listStore), &(remoteFileStore->it), selected->data);
+    gtk_tree_model_get(GTK_TREE_MODEL(remoteFileStore->listStore), &(remoteFileStore->it), STRING_COLUMN, &filename, -1);
+  }
   popOverDialog->type = POPOVER_RENAME;
+  popOverDialog->message = malloc(strlen(msg) + strlen((const char *) filename) + 1);
+  if (popOverDialog->message) {
+    strcpy(popOverDialog->message, msg);
+    strcat(popOverDialog->message, (const char *) filename);
+    gtk_label_set_text(GTK_LABEL(popOverDialog->PopOverDialogLabel), popOverDialog->message);
+  }
+  g_list_free_full(selected, (GDestroyNotify) gtk_tree_path_free);
+  popOverDialog->filename = malloc(strlen((const char *) filename));
+  strcpy(popOverDialog->filename, (const char *) filename);
+  g_free(filename);
   gtk_widget_show_all(popOverDialog->PopOverDialog);
 }
 
 void create_folder() {
-  printf("Create folder\n");
+  const char *msg;
+  if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+    msg = "Create local folder";
+  } else msg = "Create remote folder";
   popOverDialog->type = POPOVER_CREATE_FOLDER;
+  popOverDialog->message = malloc(strlen(msg) + 1);
+  if (popOverDialog->message) {
+    strcpy(popOverDialog->message, msg);
+    gtk_label_set_text(GTK_LABEL(popOverDialog->PopOverDialogLabel), popOverDialog->message);
+  }
   gtk_widget_show_all(popOverDialog->PopOverDialog);
 }
