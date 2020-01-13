@@ -38,7 +38,8 @@ static const char* const error_strings[] =
   "Error: cannot display remote files\n",
   "Error: cannot establish channelled connection to remote\n",
   "Error: executing command on remote failed\n",
-  "Error: cannot rename the file\n"
+  "Error: cannot rename the file\n",
+  "Error: cannot create directory\n"
 };
 
 /** Error enums */
@@ -65,7 +66,8 @@ enum ErrorCode {
   ERROR_DISPLAYING_REMOTE_FILES,
   SSH_CHANNEL_ERROR,
   SSH_REMOTE_COMMAND_ERROR,
-  ERROR_RENAMING_FILE
+  ERROR_RENAMING_FILE,
+  ERROR_MK_DIR
 };
 
 /**

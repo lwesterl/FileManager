@@ -436,18 +436,19 @@ void PopOverDialogCancelButton_action(__attribute__((unused)) GtkButton *PopOver
 }
 
 void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDialogOkButton) {
+  const char *new_name = (const char *) gtk_entry_get_text(GTK_ENTRY(popOverDialog->PopOverDialogEntry));
+  enum FileStatus result;
   if (popOverDialog->type == POPOVER_RENAME) {
     char *new_path, *old_path;
-    const char *new_name = (const char *) gtk_entry_get_text(GTK_ENTRY(popOverDialog->PopOverDialogEntry));
     if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
       new_path = construct_filepath(local_pwd, new_name);
       old_path = construct_filepath(local_pwd, popOverDialog->filename);
-      enum FileStatus result = fs_rename(old_path, new_path);
+      result = fs_rename(old_path, new_path);
       if (result < 0) {
         Session_message(session, get_error(ERROR_RENAMING_FILE));
         transition_MessageWindow(INFO_ERROR, session->message);
       } else {
-        transition_MainWindow();
+        show_FileStore(local_pwd, false);
       }
     } else {
       new_path = construct_filepath(remote_pwd, new_name);
@@ -457,6 +458,22 @@ void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDial
     free(new_path);
     free(old_path);
   } else {
+    // Create a new directory
+    char *dir_path;
+    if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+      dir_path = construct_filepath(local_pwd, new_name);
+      result = fs_mkdir(dir_path);
+      if (result == 0) show_FileStore(local_pwd, false);
+    } else {
+      dir_path = construct_filepath(remote_pwd, new_name);
+      result = sftp_session_mkdir(session, dir_path);
+      if (result == 0) show_FileStore(remote_pwd, true);
+    }
+    free(dir_path);
+    if (result < 0) {
+      Session_message(session, get_error(ERROR_MK_DIR));
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
   }
   close_PopOverDialog();
 }
