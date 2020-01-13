@@ -225,22 +225,25 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
       mainWindow->contextMenu->ContextMenuEmitter = widget; // Store for further use
       gtk_widget_show_all((GtkWidget *) mainWindow->contextMenu->Menu);
       int width, height;
-      int scroll_compensation = 0;
-      GtkAdjustment *adj;
+      int scroll_compensation_x, scroll_compensation_y;
+      GtkAdjustment *adj_x, *adj_y;
       gtk_window_get_size((GtkWindow *) mainWindow->TopWindow, &width, &height);
       if (mainWindow->contextMenu->ContextMenuRect) free(mainWindow->contextMenu->ContextMenuRect);
       GdkRectangle *rect = malloc(sizeof(GdkRectangle));
       // The event contains coordinates in FileView viewport and the ContextMenu has to be set to TopWindow coordinates
       rect->x = widget == mainWindow->LeftFileView ? button->x : (int) ((float)button->x + 0.5f * (float)width);
       if (widget == mainWindow->LeftFileView) {
-        adj = gtk_scrolled_window_get_hadjustment((GtkScrolledWindow *) mainWindow->LeftFileScrollWindow);
+        adj_x = gtk_scrolled_window_get_hadjustment((GtkScrolledWindow *) mainWindow->LeftFileScrollWindow);
+        adj_y = gtk_scrolled_window_get_vadjustment((GtkScrolledWindow *) mainWindow->LeftFileScrollWindow);
       } else {
-        adj = gtk_scrolled_window_get_hadjustment((GtkScrolledWindow *) mainWindow->RightFileScrollWindow);
+        adj_x = gtk_scrolled_window_get_hadjustment((GtkScrolledWindow *) mainWindow->RightFileScrollWindow);
+        adj_y = gtk_scrolled_window_get_vadjustment((GtkScrolledWindow *) mainWindow->RightFileScrollWindow);
       }
-      scroll_compensation = (int) gtk_adjustment_get_value(adj);
-      rect->x -= scroll_compensation; // This takes account the amount of view scrolling
-      // TODO fix also y scrolling
+      scroll_compensation_x = (int) gtk_adjustment_get_value(adj_x);
+      scroll_compensation_y = (int) gtk_adjustment_get_value(adj_y);
+      rect->x -= scroll_compensation_x; // This takes account the amount of horizontal view scrolling
       rect->y = button->y;
+      rect->y -= scroll_compensation_y; // This takes account the amount of vertical view scrolling
       rect->width = 50;
       rect->height = 80;
       gtk_menu_popup_at_rect(mainWindow->contextMenu->Menu, gtk_widget_get_window(mainWindow->TopWindow), rect, 0, 0, event);
