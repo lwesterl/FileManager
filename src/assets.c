@@ -79,3 +79,20 @@ char *cd_enter_pwd(char *pwd, const char *dir_name) {
   }
   return new_pwd;
 }
+
+char *construct_filepath(const char *pwd, const char *filename) {
+  char *filepath = NULL;
+  size_t len = strlen(pwd);
+  if (pwd[len -1] == '/') {
+    filepath = malloc(len + strlen(filename) + 1);
+    strcpy(filepath, pwd);
+    strcat(filepath, filename);
+  } else {
+    filepath = malloc(len + strlen(filename) + 2);
+    strcpy(filepath, pwd);
+    filepath[len] = '/';
+    filepath[len + 1] = '\0';
+    strcat(filepath, filename);
+  }
+  return filepath;
+}

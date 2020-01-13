@@ -112,4 +112,12 @@ char *cd_back_pwd(char *pwd);
   */
 char *cd_enter_pwd(char *pwd, const char *dir_name);
 
+/**
+  *   @brief Construct filepath from pwd and filename
+  *   @param pwd Present working directory (either ends to '/' or not)
+  *   @param filename Filename in the current working directory
+  *   @return Dynamically allocated pointer to filepath, must be freed elsewhere
+  */
+char *construct_filepath(const char *pwd, const char *filename);
+
 #endif // end ASSETS_HEADER
