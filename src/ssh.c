@@ -394,3 +394,8 @@ enum FileStatus sftp_session_read_file( Session *session,
   sftp_close(file);
   return FILE_WRITTEN_SUCCESSFULLY;
 }
+
+enum FileStatus sftp_session_rename_file(Session *session, const char *path, const char *new_path) {
+  if (sftp_rename(session->sftp, path, new_path) < 0) return FILE_WRITE_FAILED;
+  return FILE_WRITTEN_SUCCESSFULLY;
+}

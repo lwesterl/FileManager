@@ -178,4 +178,14 @@ enum FileStatus sftp_session_read_file( Session *session,
                                         const char *local_filename,
                                         const bool overwrite);
 
+/**
+  *   @brief Rename file on remote using sftp
+  *   @param session Session struct which contains already established sftp session
+  *   @param path Current file path on the remote
+  *   @param new_path New path for the file
+  *   @return FILE_WRITTEN_SUCCESSFULLY or FILE_WRITE_FAILED
+  *   @remark Only a wrapper for sftp_rename
+  */
+enum FileStatus sftp_session_rename_file(Session *session, const char *path, const char *new_path);
+
 #endif // end SSH_HEADER

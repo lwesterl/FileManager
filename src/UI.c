@@ -444,30 +444,30 @@ void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDial
       new_path = construct_filepath(local_pwd, new_name);
       old_path = construct_filepath(local_pwd, popOverDialog->filename);
       result = fs_rename(old_path, new_path);
-      if (result < 0) {
-        Session_message(session, get_error(ERROR_RENAMING_FILE));
-        transition_MessageWindow(INFO_ERROR, session->message);
-      } else {
-        show_FileStore(local_pwd, false);
-      }
+      show_FileStore(local_pwd, false);
     } else {
       new_path = construct_filepath(remote_pwd, new_name);
       old_path = construct_filepath(remote_pwd, popOverDialog->filename);
-      // TODO rename over ssh
+      result = sftp_session_rename_file(session, old_path, new_path);
+      show_FileStore(remote_pwd, true);
     }
     free(new_path);
     free(old_path);
+    if (result < 0) {
+      Session_message(session, get_error(ERROR_RENAMING_FILE));
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
   } else {
     // Create a new directory
     char *dir_path;
     if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
       dir_path = construct_filepath(local_pwd, new_name);
       result = fs_mkdir(dir_path);
-      if (result == 0) show_FileStore(local_pwd, false);
+      show_FileStore(local_pwd, false);
     } else {
       dir_path = construct_filepath(remote_pwd, new_name);
       result = sftp_session_mkdir(session, dir_path);
-      if (result == 0) show_FileStore(remote_pwd, true);
+      show_FileStore(remote_pwd, true);
     }
     free(dir_path);
     if (result < 0) {
