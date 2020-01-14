@@ -117,7 +117,7 @@ bool file_exists(const char *filename);
 enum FileStatus fs_mkdir(const char *dir_name);
 
 /**
-  *   @brief Remove an empty directory
+  *   @brief Remove a directory
   *   @param dir_name Path to the directory to be removed
   *   @param recursive Whether to remove the dir recursively, or only an empty dir
   *   @return 0 on success, < 0 on error
@@ -148,5 +148,14 @@ char *get_home_dir();
   *   @return FILE_WRITTEN_SUCCESSFULLY, FILE_ALREADY_EXISTS or FILE_WRITE_FAILED
   */
 enum FileStatus fs_rename(const char *old_name, const char *new_name);
+
+/**
+  *   @brief Remove filepath completely (works for files and directories)
+  *   @details For directories this will call fs_rmdir to recursively erase the
+  *   whole directory. For files this will call unlink
+  *   @param filepath To be removed, can be file or directory
+  *   @return 0 on success, -1 on error
+  */
+int remove_completely(const char *filepath);
 
 #endif // end FS_HEADER

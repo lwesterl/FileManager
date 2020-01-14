@@ -163,3 +163,15 @@ enum FileStatus fs_rename(const char *old_name, const char *new_name) {
   if (rename(old_name, new_name) == 0) return FILE_WRITTEN_SUCCESSFULLY;
   return FILE_WRITE_FAILED;
 }
+
+int remove_completely(const char *filepath) {
+  struct stat st;
+  if (stat(filepath, &st) == 0) {
+    if (st.st_mode & S_IFDIR) {
+      return fs_rmdir(filepath, true);
+    } else {
+      return unlink(filepath);
+    }
+  }
+  return -1; // stat error
+}
