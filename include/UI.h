@@ -39,6 +39,7 @@ typedef struct {
   GtkMenuItem *paste; /**< GtkMenuItem triggers file pasting operation */
   GtkMenuItem *rename; /**< GtkMenuItem triggers file rename operation */
   GtkMenuItem *create_folder; /**< GtkMenuItem triggers create folder operation */
+  GtkMenuItem *delete; /**< GtkMenuItem triggers recursive file/directory removal */
 } ContextMenu;
 
 /**
@@ -49,7 +50,8 @@ enum ContextMenuActions {
   COPY, /**< Copy selected files */
   PASTE, /**< Paste selected files */
   RENAME, /**< Rename selected files */
-  CREATE_FOLDER /**< Create new folder */
+  CREATE_FOLDER, /**< Create new folder */
+  DELETE /**< Delete file/directory */
 };
 
 /**< String names for ContextMenuActions */
@@ -58,7 +60,8 @@ static const char* const ContextMenuAction_names[] =
   "Copy",
   "Paste",
   "Rename",
-  "Create new folder"
+  "Create new folder",
+  "Delete"
 };
 
 /**
@@ -138,7 +141,8 @@ typedef struct {
   */
 enum MessageType {
   ASK_SSH, /**< A message contains a ssh key which needs user interaction */
-  INFO_ERROR /**< A message is either an info or an error message */
+  INFO_ERROR, /**< A message is either an info or an error message */
+  ASK_DELETE /**< Ask user whether he/she wants to permanently delete file */
 };
 
 /**
@@ -459,8 +463,27 @@ void rename_file();
 
 /**
   *   @brief Create new folder, creates PopOverWindow for creating folder
+  *   @remark mainWindow->contextMenu->ContextMenuEmitter must be set prior entering
+  *   this function
   */
 void create_folder();
+
+/**
+  *   @brief Delete file or directory
+  *   @param finalize true -> permanently delete files, false -> show promt
+  *   whether to permanently delete files
+  *   @remark FileView (mainWindow->contextMenu->ContextMenuEmitter) must have
+  *   exactly one element selected prior entering this function
+  */
+void delete_file(bool finalize);
+
+/**
+  *   @brief Get file currently selected in mainWindow->contextMenu->ContextMenuEmitter
+  *   @return Filename as pointer, which needs to be freed using g_free
+  *   @remark This is only intended to be called from rename_file and delete_file
+  *   functions
+  */
+gchar *get_selected_filename();
 
 
 #endif // end UI_HEADER

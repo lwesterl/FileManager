@@ -105,6 +105,9 @@ void init_ContextMenu() {
   mainWindow->contextMenu->create_folder = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(CREATE_FOLDER));
   g_signal_connect(mainWindow->contextMenu->create_folder, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->create_folder);
   gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->create_folder, 0, 1, 3, 4);
+  mainWindow->contextMenu->delete = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(DELETE));
+  g_signal_connect(mainWindow->contextMenu->delete, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->delete);
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->delete, 0, 1, 4, 5);
 }
 
 void init_ConnectWindow() {
@@ -270,6 +273,7 @@ void show_ContextMenu_buttons(bool file_selected) {
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->paste), !selected);
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->rename), selected);
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->create_folder), !selected);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->delete), selected);
 }
 
 
@@ -374,7 +378,12 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
       default:
         return;
     }
-  } else {
+  } else if (messageWindow->messageType == ASK_DELETE) {
+    // User wants to permanently remove a file
+    delete_file(true);
+    close_MessageWindow();
+  }
+  else {
     close_MessageWindow();
   }
 }
@@ -426,8 +435,10 @@ void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpoin
     printf("Paste\n");
   } else if (menuItem == mainWindow->contextMenu->rename) {
     rename_file();
-  } else {
+  } else if (menuItem == mainWindow->contextMenu->create_folder) {
     create_folder();
+  } else {
+    delete_file(false);
   }
 }
 
@@ -566,17 +577,8 @@ void update_FileView(bool remote) {
 }
 
 void rename_file() {
-  GList *selected = gtk_icon_view_get_selected_items(GTK_ICON_VIEW(mainWindow->contextMenu->ContextMenuEmitter));
   const char *msg = "Rename: ";
-  gchar *filename;
-  if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
-    gtk_tree_model_get_iter(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), selected->data);
-    gtk_tree_model_get(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), STRING_COLUMN, &filename, -1);
-
-  } else {
-    gtk_tree_model_get_iter(GTK_TREE_MODEL(remoteFileStore->listStore), &(remoteFileStore->it), selected->data);
-    gtk_tree_model_get(GTK_TREE_MODEL(remoteFileStore->listStore), &(remoteFileStore->it), STRING_COLUMN, &filename, -1);
-  }
+  gchar *filename = get_selected_filename();
   popOverDialog->type = POPOVER_RENAME;
   popOverDialog->message = malloc(strlen(msg) + strlen((const char *) filename) + 1);
   if (popOverDialog->message) {
@@ -584,7 +586,6 @@ void rename_file() {
     strcat(popOverDialog->message, (const char *) filename);
     gtk_label_set_text(GTK_LABEL(popOverDialog->PopOverDialogLabel), popOverDialog->message);
   }
-  g_list_free_full(selected, (GDestroyNotify) gtk_tree_path_free);
   popOverDialog->filename = malloc(strlen((const char *) filename));
   strcpy(popOverDialog->filename, (const char *) filename);
   g_free(filename);
@@ -603,4 +604,47 @@ void create_folder() {
     gtk_label_set_text(GTK_LABEL(popOverDialog->PopOverDialogLabel), popOverDialog->message);
   }
   gtk_widget_show_all(popOverDialog->PopOverDialog);
+}
+
+void delete_file(bool finalize) {
+  gchar *filename = get_selected_filename();
+  if (finalize) {
+    // Delete files permanently
+    char *path;
+    if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+      path = construct_filepath(local_pwd, filename);
+      if (remove_completely(path) < 0) {
+        Session_message(session, get_error(ERROR_DELETE_FILE));
+        transition_MessageWindow(INFO_ERROR, session->message);
+      }
+      show_FileStore(local_pwd, false);
+    } else {
+      path = construct_filepath(remote_pwd, filename);
+    }
+    free(path);
+  } else {
+    // Just show a promt whether to delete files
+    const char *promt = "Are you sure?\nOperation will permanently erase contents of:\n";
+    char *msg = malloc(strlen(promt) + strlen((const char *) filename) + 1);
+    strcpy(msg, promt);
+    strcat(msg, (const char *) filename);
+    Session_message(session, msg);
+    transition_MessageWindow(ASK_DELETE, session->message);
+  }
+  g_free(filename);
+}
+
+gchar *get_selected_filename() {
+  gchar *filename;
+  GList *selected = gtk_icon_view_get_selected_items(GTK_ICON_VIEW(mainWindow->contextMenu->ContextMenuEmitter));
+  if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), selected->data);
+    gtk_tree_model_get(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), STRING_COLUMN, &filename, -1);
+
+  } else {
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(remoteFileStore->listStore), &(remoteFileStore->it), selected->data);
+    gtk_tree_model_get(GTK_TREE_MODEL(remoteFileStore->listStore), &(remoteFileStore->it), STRING_COLUMN, &filename, -1);
+  }
+  g_list_free_full(selected, (GDestroyNotify) gtk_tree_path_free);
+  return filename;
 }

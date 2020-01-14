@@ -39,7 +39,8 @@ static const char* const error_strings[] =
   "Error: cannot establish channelled connection to remote\n",
   "Error: executing command on remote failed\n",
   "Error: cannot rename the file\n",
-  "Error: cannot create directory\n"
+  "Error: cannot create directory\n",
+  "Error: cannot remove file\n"
 };
 
 /** Error enums */
@@ -67,7 +68,8 @@ enum ErrorCode {
   SSH_CHANNEL_ERROR,
   SSH_REMOTE_COMMAND_ERROR,
   ERROR_RENAMING_FILE,
-  ERROR_MK_DIR
+  ERROR_MK_DIR,
+  ERROR_DELETE_FILE
 };
 
 /**
