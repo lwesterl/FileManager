@@ -11,3 +11,6 @@ test/*
 
 # Ignore temporary glade files
 *.glade~
+
+# Ignore Doxygen docs
+doc/
