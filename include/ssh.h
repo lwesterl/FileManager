@@ -21,6 +21,7 @@
 
 #include "str_messages.h"
 #include "fs.h"
+#include "assets.h"
 
 #define MAX_BUF_SIZE 16384 /**< Used for sftp_session_read_file */
 
@@ -187,5 +188,24 @@ enum FileStatus sftp_session_read_file( Session *session,
   *   @remark Only a wrapper for sftp_rename
   */
 enum FileStatus sftp_session_rename_file(Session *session, const char *path, const char *new_path);
+
+/**
+  *   @brief Remove directory (and its content)
+  *   @param session Session struct which contains already established sftp session
+  *   @param dir_name Name of the directory to be removed
+  *   @param recursive Whether to remove an empty directory or all the contents
+  *   @return 0 on success, -1 on error
+  */
+int sftp_session_rmdir(Session *session, const char *dir_name, bool recursive);
+
+/**
+  *   @brief Remove filepath completely (works for both files and directories)
+  *   @details For directories this will call sftp_session_rmdir to recursively
+  *   erase the whole directory. For files this will call sftp_unlink
+  *   @param session Session struct which contains already established sftp session
+  *   @param filepath To be removed
+  *   @return 0 on success, -1 on error (sets corresponding error message, @see Session_message)
+  */
+int sftp_session_remove_completely_file(Session *session, const char *filepath);
 
 #endif // end SSH_HEADER

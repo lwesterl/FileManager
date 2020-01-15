@@ -399,3 +399,65 @@ enum FileStatus sftp_session_rename_file(Session *session, const char *path, con
   if (sftp_rename(session->sftp, path, new_path) < 0) return FILE_WRITE_FAILED;
   return FILE_WRITTEN_SUCCESSFULLY;
 }
+
+int sftp_session_rmdir(Session *session, const char *dir_name, bool recursive) {
+  sftp_dir dir;
+  sftp_attributes attr;
+  int ret;
+
+  if (recursive) {
+    dir = sftp_opendir(session->sftp, dir_name);
+    if (!dir) return -1;
+
+    while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
+      if ((strcmp(attr->name, ".") != 0) && (strcmp(attr->name, "..") != 0)) {
+
+        char *filepath = construct_filepath(dir_name, attr->name);
+        if (!filepath) {
+          sftp_attributes_free(attr);
+          sftp_closedir(dir);
+          return -1;
+        }
+
+        if (is_folder(attr->type)) {
+          ret = sftp_session_rmdir(session, filepath, true);
+        } else {
+          ret = sftp_unlink(session->sftp, filepath);
+        }
+        if (ret < 0) {
+          sftp_attributes_free(attr);
+          sftp_closedir(dir);
+          return -1;
+        }
+      }
+      sftp_attributes_free(attr);
+    }
+
+    if (!sftp_dir_eof(dir)) return -1;
+    sftp_closedir(dir);
+
+  }
+  return sftp_rmdir(session->sftp, dir_name);
+}
+
+int sftp_session_remove_completely_file(Session *session, const char *filepath) {
+  sftp_attributes attr;
+  attr = sftp_stat(session->sftp, filepath);
+  int ret = -1;
+  if (attr) {
+    if (is_folder(attr->type)) {
+      sftp_attributes_free(attr);
+      if ((ret = sftp_session_rmdir(session, filepath, true)) != 0) {
+        Session_message(session, get_error(ERROR_DELETE_REMOTE_DIR));
+      }
+    } else {
+      sftp_attributes_free(attr);
+      if ((ret = sftp_unlink(session->sftp, filepath)) != 0) {
+        Session_message(session, get_error(ERROR_DELETE_REMOTE_FILE));
+      }
+    }
+  } else {
+    Session_message(session, get_error(ERROR_DISPLAYING_REMOTE_FILES));
+  }
+  return ret;
+}

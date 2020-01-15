@@ -620,6 +620,10 @@ void delete_file(bool finalize) {
       show_FileStore(local_pwd, false);
     } else {
       path = construct_filepath(remote_pwd, filename);
+      if (sftp_session_remove_completely_file(session, path) < 0) {
+        transition_MessageWindow(INFO_ERROR, session->message);
+      }
+      show_FileStore(remote_pwd, true);
     }
     free(path);
   } else {
