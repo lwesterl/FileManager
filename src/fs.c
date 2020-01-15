@@ -45,27 +45,10 @@ int fs_rmdir(const char *dir_name, bool recursive) {
       while ((dt = readdir(dir)) != NULL) {
         if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
 
-          char *filepath = NULL;
-          if (dir_name[strlen(dir_name) -1] == '/') {
-            // No need to set slash to the end of dir_name
-            filepath = malloc(strlen(dir_name) + strlen(dt->d_name) + 1);
-            if (!filepath) {
-              closedir(dir);
-              return -1;
-            }
-            strcpy(filepath, dir_name);
-            strcat(filepath, dt->d_name);
-          } else {
-            filepath = malloc(strlen(dir_name) + strlen(dt->d_name) + 2);
-            if (!filepath) {
-              closedir(dir);
-              return -1;
-            }
-            strcpy(filepath, dir_name);
-            unsigned len = strlen(filepath);
-            filepath[len] = '/';
-            filepath[len + 1] = '\0'; // Extremely important to add the terminating null byte
-            strcat(filepath, dt->d_name);
+          char *filepath = construct_filepath(dir_name, dt->d_name);
+          if (!filepath) {
+            closedir(dir);
+            return -1;
           }
 
           if (is_folder(dt->d_type)) {
@@ -104,19 +87,11 @@ GSList* ls_dir(GSList *files, const char *dir_name) {
     strcpy(file->name, dt->d_name);
     file->type = dt->d_type;
 
-    char *filepath = NULL;
-    if (dir_name[strlen(dir_name) -1] == '/') {
-      // No need to set slash to the end of dir_name
-      filepath = malloc(strlen(dir_name) + strlen(file->name) + 1);
-      strcpy(filepath, dir_name);
-      strcat(filepath, file->name);
-    } else {
-      filepath = malloc(strlen(dir_name) + strlen(file->name) + 2);
-      strcpy(filepath, dir_name);
-      unsigned len = strlen(filepath);
-      filepath[len] = '/';
-      filepath[len + 1] = '\0'; // Extremely important to add the terminating null byte
-      strcat(filepath, file->name);
+    char *filepath = construct_filepath(dir_name, file->name);
+    if (!filepath) {
+      free(file);
+      clear_Filelist(files);
+      return NULL;
     }
 
     if (stat(filepath, &st) != 0) {
