@@ -55,6 +55,19 @@ struct File {
 };
 typedef struct File File_t; /**< Needed for FileList iteration */
 
+/**
+  *   @struct FileCopy
+  *   @brief Contains information about a file to be copied
+  *   @remark These are stored in linked lists
+  */
+struct FileCopy {
+  char *filename; /**< Name of the file */
+  char *filepath; /**< Path to the file */
+  bool remote; /**< Whether the file is on a remote filesystem or not */
+};
+typedef struct FileCopy FileCopy_t; /**< Type for ease of use */
+
+
 /* Linked list management */
 
 /**
@@ -82,9 +95,10 @@ inline static void clear_Filelist(GSList *files) {
 }
 
 /**
-  *   @brief append one element to list containing File elements
+  *   @brief Append one element to a list containing File elements
   *   @param files Pointer to a GSList which contains directory files
   *   @param file File to be added (this must be allocated dynamically)
+  *   @return Updated pointer to the linked list
   *   @remark This is basically a wrapper for g_slist_append
   */
 inline static GSList *append_FileList(GSList *files, struct File *file) {
@@ -94,11 +108,52 @@ inline static GSList *append_FileList(GSList *files, struct File *file) {
 /**
   *   @brief Iterate over all File structs in the FileList
   *   @param files Pointer to a linked list containing File structs, additionally void * can be passed
-  *   @param f pointer to a function which is executed for each entry in the list
+  *   @param f Pointer to a function which is executed for each entry in the list
   *   @param ptr Additional pointer which is passed to the function
   */
 void iterate_FileList(GSList *files, void f (File_t*, void *), void *ptr);
 
+/**
+  *   @brief Free FileCopy struct
+  *   @param pointer Pointer to a FileCopy struct, passed as void *
+  */
+inline static void free_FileCopy(void *pointer) {
+  struct FileCopy *fileCopy = (FileCopy_t *) pointer;
+  if (fileCopy) {
+    if (fileCopy->filename) free(fileCopy->filename);
+    if (fileCopy->filepath) free(fileCopy->filepath);
+    free(fileCopy);
+  }
+}
+
+/**
+  *   @brief Clear linked list containing FileCopy structs
+  *   @param fileCopyList A linked list containing FileCopy structs
+  */
+inline static void clear_FileCopyList(GSList *fileCopyList) {
+  g_slist_free_full(fileCopyList, free_FileCopy);
+}
+
+/**
+  *   @brief Append one element to a list containing FileCopy structs
+  *   @param fileCopyList Pointer to a GSList containing FileCopy structs
+  *   @param fileCopy A FileCopy struct to be appended
+  *   @return Updated pointer to the linked list
+  *   @remark This is only a wrapper for g_slist_append
+  */
+inline static GSList *append_FileCopyList(GSList *fileCopyList, FileCopy_t *fileCopy) {
+  return g_slist_append(fileCopyList, fileCopy);
+}
+
+/**
+  *   @brief Iterate over all FileCopy structs in the fileCopies
+  *   @param fileCopyList A GSList which contains FileCopy structs
+  *   @param f Pointer to a function which is executed for each entry in the fileCopies
+  *   @param ptr Additional pointer which is passed to the function
+  */
+void iterate_FileCopyList( GSList *fileCopyList,
+                           void f (const FileCopy_t*, const void *),
+                           const void *ptr);
 
 /* Local filesystem management */
 

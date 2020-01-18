@@ -15,6 +15,17 @@ void iterate_FileList(GSList *files, void f (File_t *, void *), void *ptr) {
   } while ((nxt = nxt->next) != NULL);
 }
 
+void iterate_FileCopyList( GSList *fileCopyList,
+                           void f (const FileCopy_t *, const void *),
+                           const void *ptr) {
+  GSList *nxt = fileCopyList;
+  do {
+    if (nxt) {
+      f((FileCopy_t *) nxt->data, ptr);
+    }
+  } while ((nxt = nxt->next) != NULL);
+}
+
 /* Local filesystem management */
 
 bool file_exists(const char *filename) {
