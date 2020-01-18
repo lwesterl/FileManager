@@ -12,6 +12,7 @@ void initUI(int argc, char *argv[]) {
   session = NULL;
   remoteFileStore = NULL;
   localFileStore = NULL;
+  fileCopies = NULL;
 
   builder = gtk_builder_new_from_file(LAYOUT_PATH);
 
@@ -37,6 +38,7 @@ void quitUI() {
   // Free allocated memory
   clear_FileStore(remoteFileStore);
   clear_FileStore(localFileStore);
+  if (fileCopies) clear_FileCopyList(fileCopies);
   clear_ContextMenu();
   free(mainWindow);
   free(connectWindow);
@@ -430,9 +432,9 @@ gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute_
 
 void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpointer user_data) {
   if (menuItem == mainWindow->contextMenu->copy) {
-    printf("Copy\n");
+    copy_files();
   } else if (menuItem == mainWindow->contextMenu->paste) {
-    printf("Paste\n");
+    paste_files();
   } else if (menuItem == mainWindow->contextMenu->rename) {
     rename_file();
   } else if (menuItem == mainWindow->contextMenu->create_folder) {
@@ -636,6 +638,56 @@ void delete_file(bool finalize) {
     transition_MessageWindow(ASK_DELETE, session->message);
   }
   g_free(filename);
+}
+
+// Currently works only for a single file
+void copy_files() {
+  char *filepath;
+  bool remote = false;
+  if (fileCopies) {
+    clear_FileCopyList(fileCopies);
+    fileCopies = NULL;
+  }
+  gchar *filename = get_selected_filename();
+  if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+    filepath = construct_filepath(local_pwd, (const char *) filename);
+  } else {
+    filepath = construct_filepath(remote_pwd, (const char *) filename);
+    remote = true;
+  }
+  if (filename && filepath) {
+    FileCopy_t *fileCopy = malloc(sizeof(FileCopy_t));
+    if (fileCopy) {
+      fileCopy->filename = (char *) filename;
+      fileCopy->filepath = filepath;
+      fileCopy->remote = remote;
+      fileCopies = append_FileCopyList(fileCopies, fileCopy);
+    }
+  } else if (filename) {
+    g_free(filename);
+  } else if (filepath) {
+    free(filepath);
+  }
+}
+
+void paste_files() {
+  const char *pwd;
+  if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+    pwd = local_pwd;
+  } else {
+    pwd = remote_pwd;
+  }
+  iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd);
+}
+
+void paste_file(const FileCopy_t *fileCopy, const void *pwd) {
+  const char *dir;
+  if (pwd) {
+    dir = (const char *) pwd;
+    printf("pwd: %s, filaname: %s, filepath: %s, remote: %d\n",
+            dir, fileCopy->filename, fileCopy->filepath, fileCopy->remote);
+
+  }
 }
 
 gchar *get_selected_filename() {

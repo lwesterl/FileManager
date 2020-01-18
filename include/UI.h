@@ -214,6 +214,7 @@ PopOverDialog *popOverDialog; /**< Pointer to a PopOverDialog struct */
 Session *session; /**< SSH Session pointer */
 FileStore *remoteFileStore; /**< Used to store displayed elements which correspond to RemoteFiles */
 FileStore *localFileStore; /**< Uses to store displayed elements which correspond to LocalFiles */
+GSList *fileCopies; /**< GSList which stores FileCopy structs for files selected for a copy operation */
 
 /* UI initialization */
 /**
@@ -476,6 +477,32 @@ void create_folder();
   *   exactly one element selected prior entering this function
   */
 void delete_file(bool finalize);
+
+/**
+  *   @brief Store currently selected files to fileCopies
+  *   @remark This won't copy the files, it only stores paths to selected files.
+  *   mainWindow->contextMenu->ContextMenuEmitter must be set prior entering this
+  *   function
+  *   @Todo Multifile support
+  */
+void copy_files();
+
+/**
+  *   @brief Paste files from fileCopies to selected location
+  *   @remark mainWindow->contextMenu->ContextMenuEmitter must be set prior
+  *   entering this function
+  *   @details This will call paste_file for each entry in fileCopies. This is
+  *   the function which is called after the paste button is pressed
+  */
+void paste_files();
+
+/**
+  *   @brief Paste single file from a fileCopies entry to the selected location
+  *   @remark This should be only called from paste_files via iterate_FileCopyList
+  *   @param fileCopy Pointer to a FileCopy struct
+  *   @param pwd Present working directory as void pointer (casted to char *)
+  */
+void paste_file(const FileCopy_t *fileCopy, const void *pwd);
 
 /**
   *   @brief Get file currently selected in mainWindow->contextMenu->ContextMenuEmitter
