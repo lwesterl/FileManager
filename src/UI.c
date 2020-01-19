@@ -677,7 +677,7 @@ void paste_files() {
   } else {
     pwd = remote_pwd;
   }
-  iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd);
+  if (fileCopies) iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd);
 }
 
 void paste_file(const FileCopy_t *fileCopy, const void *pwd) {
