@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
+#include <sys/sendfile.h>
 
 #include "assets.h"
 
@@ -177,7 +178,7 @@ enum FileStatus fs_mkdir(const char *dir_name);
   *   @param recursive Whether to remove the dir recursively, or only an empty dir
   *   @return 0 on success, < 0 on error
   */
-int fs_rmdir(const char *dir_name, bool recursive);
+int fs_rmdir(const char *dir_name, const bool recursive);
 
 /**
   *   @brief List directory content to linked list of struct File
@@ -212,5 +213,36 @@ enum FileStatus fs_rename(const char *old_name, const char *new_name);
   *   @return 0 on success, -1 on error
   */
 int remove_completely(const char *filepath);
+
+/**
+  *   @brief Copy a single file from source to destination on local filesystem
+  *   @param src Source file path (this needs to be a file not directory)
+  *   @param dst Destination file path (this needs to be a file not directory)
+  *   @return FileStatus
+  *   @remark This allows truncating a file when src and dst point to same path;
+  *   check elsewhere that src and dst are not the same or set overwrite to false
+  */
+enum FileStatus fs_copy_file(const char *src, const char *dst, const bool overwrite);
+
+/**
+  *   @brief Copy directory from source to destination on local filesystem
+  *   @param src Source directory path
+  *   @param dst Destination directory path
+  *   @param recursive Whether to copy the directory recursively
+  *   @return FileStatus indicating the result of the operation
+  */
+enum FileStatus fs_copy_dir(const char *src, const char *dst, const bool recursive, const bool overwrite);
+
+/**
+  *   @brief Copy file (or directory content) from source to destination
+  *   @param src Source file or directory path
+  *   @param dst Destination file or directory path
+  *   @param recursive Whether to copy directory recursively, this does not
+  *   @param overwrite Whether to overwrite possibly already existing destination
+  *   file
+  *   @remark This is a wrapper for fs_copy_file and fs_copy_dir
+  *   @return FileStatus, int
+  */
+enum FileStatus fs_copy_files(const char *src, const char *dst, const bool recursive, const bool overwrite);
 
 #endif // end FS_HEADER

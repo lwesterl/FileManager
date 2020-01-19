@@ -43,7 +43,7 @@ enum FileStatus fs_mkdir(const char *dir_name) {
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-int fs_rmdir(const char *dir_name, bool recursive) {
+int fs_rmdir(const char *dir_name, const bool recursive) {
   if (recursive) {
       DIR *dir = NULL;
       struct dirent *dt = NULL;
@@ -160,4 +160,48 @@ int remove_completely(const char *filepath) {
     }
   }
   return -1; // stat error
+}
+
+enum FileStatus fs_copy_file(const char *src, const char *dst, const bool overwrite) {
+  int src_fd, dst_fd;
+  struct stat st = {0};
+  mode_t mode;
+  off_t copied = 0;
+  int src_flags = O_RDONLY;
+  int dst_flags = overwrite ? O_CREAT | O_WRONLY | O_TRUNC : O_CREAT | O_WRONLY | O_EXCL;
+  if (stat(src, &st) == 0) {
+    mode = st.st_mode;
+    if ((src_fd = open(src, src_flags)) != -1) {
+      if ((dst_fd = open(dst, dst_flags, mode)) != -1) {
+        int ret = sendfile(dst_fd, src_fd, &copied, st.st_size);
+        close(src_fd);
+        close(dst_fd);
+        if (ret != -1) return FILE_WRITTEN_SUCCESSFULLY;
+        return FILE_WRITE_FAILED;
+      } else {
+        close(src_fd);
+        if (errno == EEXIST) return FILE_ALREADY_EXISTS;
+        return FILE_WRITE_FAILED;
+      }
+    }
+  }
+  return FILE_READ_FAILED;
+}
+
+enum FileStatus fs_copy_dir(const char *src, const char *dst, const bool recursive, const bool overwrite) {
+  return FILE_WRITE_FAILED;
+}
+
+enum FileStatus fs_copy_files(const char *src, const char *dst, const bool recursive, const bool overwrite) {
+  struct stat st;
+  if (stat(src, &st) == 0) {
+    if (st.st_mode & S_IFDIR) {
+      // Copy directory
+      return fs_copy_files(src, dst, recursive, overwrite);
+    } else {
+      // Copy file
+      return fs_copy_file(src, dst, overwrite);
+    }
+  }
+  return FILE_WRITE_FAILED;
 }
