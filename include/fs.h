@@ -35,7 +35,10 @@ enum FileStatus {
   FILE_ALREADY_EXISTS = -1, /**< File already existed */
   FILE_WRITE_FAILED = -2, /**< File write failed */
   FILE_READ_FAILED = -3, /**< File read failed */
-  MKDIR_FAILED = -4 /**< mkdir operation failed */
+  MKDIR_FAILED = -4, /**< mkdir operation failed */
+  DIR_ALREADY_EXISTS = -5, /**< A directory already exists */
+  FILE_COPY_FAILED = -6 /**< A file copy operation failed */
+
 };
 
 /**
@@ -217,32 +220,51 @@ int remove_completely(const char *filepath);
 /**
   *   @brief Copy a single file from source to destination on local filesystem
   *   @param src Source file path (this needs to be a file not directory)
-  *   @param dst Destination file path (this needs to be a file not directory)
-  *   @return FileStatus
+  *   @param filename Source file name
+  *   @param dst Destination path (this is the parent directory)
+  *   @return FileStatus (FILE_WRITTEN_SUCCESSFULLY = ok, FILE_ALREADY_EXISTS = you may try
+  *   again with overwrite set to true, FILE_COPY_FAILED = some severe error)
   *   @remark This allows truncating a file when src and dst point to same path;
   *   check elsewhere that src and dst are not the same or set overwrite to false
   */
-enum FileStatus fs_copy_file(const char *src, const char *dst, const bool overwrite);
+enum FileStatus fs_copy_file( const char *src,
+                              const char *filename,
+                              const char *dst,
+                              const bool overwrite);
 
 /**
   *   @brief Copy directory from source to destination on local filesystem
-  *   @param src Source directory path
-  *   @param dst Destination directory path
+  *   @param src Source directory path (this is path to the dir itself)
+  *   @param dirname Source directory name
+  *   @param dst Destination directory path (this is path to the parent directory)
   *   @param recursive Whether to copy the directory recursively
-  *   @return FileStatus indicating the result of the operation
+  *   @return FileStatus (FILE_WRITTEN_SUCCESSFULLY = ok, FILE_ALREADY_EXISTS = you may try
+  *   again with overwrite set to true, DIR_ALREADY_EXISTS = you may try again with overwrite
+  *   set to true, FILE_COPY_FAILED = some severe error)
   */
-enum FileStatus fs_copy_dir(const char *src, const char *dst, const bool recursive, const bool overwrite);
+enum FileStatus fs_copy_dir(  const char *src,
+                              const char *dirname,
+                              const char *dst,
+                              const bool recursive,
+                              const bool overwrite);
 
 /**
   *   @brief Copy file (or directory content) from source to destination
-  *   @param src Source file or directory path
-  *   @param dst Destination file or directory path
+  *   @param src Source file or directory path (path to the file itself, not parent directory)
+  *   @param filename Source file name
+  *   @param dst Destination file or directory path (path to the parent directory)
   *   @param recursive Whether to copy directory recursively, this does not
   *   @param overwrite Whether to overwrite possibly already existing destination
   *   file
   *   @remark This is a wrapper for fs_copy_file and fs_copy_dir
-  *   @return FileStatus, int
+  *   @return FileStatus (FILE_WRITTEN_SUCCESSFULLY = ok, FILE_ALREADY_EXISTS = you may try
+  *   again with overwrite set to true, DIR_ALREADY_EXISTS = you may try again with overwrite
+  *   set to true, FILE_COPY_FAILED = some severe error)
   */
-enum FileStatus fs_copy_files(const char *src, const char *dst, const bool recursive, const bool overwrite);
+enum FileStatus fs_copy_files(  const char *src,
+                                const char *filename,
+                                const char *dst,
+                                const bool recursive,
+                                const bool overwrite);
 
 #endif // end FS_HEADER

@@ -162,45 +162,110 @@ int remove_completely(const char *filepath) {
   return -1; // stat error
 }
 
-enum FileStatus fs_copy_file(const char *src, const char *dst, const bool overwrite) {
+enum FileStatus fs_copy_file( const char *src,
+                              const char *filename,
+                              const char *dst,
+                              const bool overwrite) {
   int src_fd, dst_fd;
   struct stat st = {0};
   mode_t mode;
+  char *new_filepath = NULL;
   off_t copied = 0;
   int src_flags = O_RDONLY;
   int dst_flags = overwrite ? O_CREAT | O_WRONLY | O_TRUNC : O_CREAT | O_WRONLY | O_EXCL;
   if (stat(src, &st) == 0) {
     mode = st.st_mode;
+    new_filepath = construct_filepath(dst, filename);
+    if (!new_filepath) return FILE_COPY_FAILED;
     if ((src_fd = open(src, src_flags)) != -1) {
-      if ((dst_fd = open(dst, dst_flags, mode)) != -1) {
+      if ((dst_fd = open(new_filepath, dst_flags, mode)) != -1) {
         int ret = sendfile(dst_fd, src_fd, &copied, st.st_size);
         close(src_fd);
         close(dst_fd);
+        free(new_filepath);
         if (ret != -1) return FILE_WRITTEN_SUCCESSFULLY;
-        return FILE_WRITE_FAILED;
+        return FILE_COPY_FAILED;
       } else {
         close(src_fd);
+        free(new_filepath);
         if (errno == EEXIST) return FILE_ALREADY_EXISTS;
-        return FILE_WRITE_FAILED;
+        return FILE_COPY_FAILED;
+      }
+    } else free(new_filepath);
+  }
+  return FILE_COPY_FAILED;
+}
+
+enum FileStatus fs_copy_dir(  const char *src,
+                              const char *dirname,
+                              const char *dst,
+                              const bool recursive,
+                              const bool overwrite)
+{
+  DIR *dir = NULL;
+  struct dirent *dt = NULL;
+  int ret;
+  struct stat st = {0};
+  char *new_dir = construct_filepath(dst, dirname);
+  if (!new_dir) return FILE_COPY_FAILED;
+  bool exists = stat(new_dir, &st) == 0 && S_ISDIR(st.st_mode);
+  if (exists && !overwrite) {
+    free(new_dir);
+    return DIR_ALREADY_EXISTS;
+  }
+  if (!exists) {
+    ret = fs_mkdir(new_dir);
+    if (ret == MKDIR_FAILED) return FILE_COPY_FAILED;
+  }
+  if (recursive) {
+    dir = opendir(src);
+    if (!dir) {
+      free(new_dir);
+      return FILE_COPY_FAILED;
+    }
+    while ((dt = readdir(dir)) != NULL) {
+      if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
+        char *src_path = construct_filepath(src, dt->d_name);
+        if (!src_path) {
+          free(new_dir);
+          closedir(dir);
+          return FILE_COPY_FAILED;
+        }
+        if (is_folder(dt->d_type)) {
+          // Copy a sub-directory
+          ret = fs_copy_dir(src_path, dt->d_name, new_dir, recursive, overwrite);
+        } else {
+          // Copy a file
+          ret = fs_copy_file(src_path, dt->d_name, new_dir, overwrite);
+        }
+        free(src_path);
+        if (ret < 0) {
+          free(new_dir);
+          closedir(dir);
+          return ret; // Some error, return immediately
+        }
       }
     }
+    closedir(dir);
   }
-  return FILE_READ_FAILED;
+  free(new_dir);
+  return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-enum FileStatus fs_copy_dir(const char *src, const char *dst, const bool recursive, const bool overwrite) {
-  return FILE_WRITE_FAILED;
-}
-
-enum FileStatus fs_copy_files(const char *src, const char *dst, const bool recursive, const bool overwrite) {
+enum FileStatus fs_copy_files(  const char *src,
+                                const char *filename,
+                                const char *dst,
+                                const bool recursive,
+                                const bool overwrite)
+{
   struct stat st;
   if (stat(src, &st) == 0) {
     if (st.st_mode & S_IFDIR) {
       // Copy directory
-      return fs_copy_files(src, dst, recursive, overwrite);
+      return fs_copy_files(src, filename, dst, recursive, overwrite);
     } else {
       // Copy file
-      return fs_copy_file(src, dst, overwrite);
+      return fs_copy_file(src, filename, dst, overwrite);
     }
   }
   return FILE_WRITE_FAILED;
