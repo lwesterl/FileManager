@@ -15,7 +15,7 @@ all: fs_test assets_test
 %.o:	$(SRC)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-fs_test: fs.o test_fs.c
+fs_test: fs.o assets.o test_fs.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 assets_test: assets.o test_assets.c

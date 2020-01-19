@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #include "../include/fs.h"
+#include "../include/assets.h"
 
 void print_File(File_t *file, __attribute__((unused)) void *ptr) {
   printf("Filename: %s \t", file->name);
@@ -40,6 +41,23 @@ int main() {
 
   assert(fs_rename(dir_name, dir_name2) == FILE_WRITTEN_SUCCESSFULLY);
   assert(fs_rmdir(dir_name2, true) == 0);
+
+  const char *dir_name3 = "TEST_test";
+  const char *filename = "TEST_test/test.txt";
+  const char *filename2 = "TEST_test/test2.txt";
+  assert(fs_mkdir(dir_name3) == FILE_WRITTEN_SUCCESSFULLY);
+  fd = open(filename, O_CREAT | O_WRONLY, S_IRWXU);
+  if (fd) {
+    const char *text = "Hello\nHello\nWhat's up?\nNothing special, I'm just testing\n....\n";
+    write(fd, text, strlen(text));
+    close(fd);
+    assert(fs_copy_file(filename, filename2, false) == FILE_WRITTEN_SUCCESSFULLY);
+    assert(fs_copy_file(filename, filename2, false) == FILE_ALREADY_EXISTS);
+    assert(fs_copy_file(filename, filename2, true) == FILE_WRITTEN_SUCCESSFULLY);
+    assert(fs_copy_file(filename, filename, true) == FILE_WRITTEN_SUCCESSFULLY); // truncates the file
+    assert(fs_copy_file(filename2, filename2, false) == FILE_ALREADY_EXISTS);
+  }
+  assert(fs_rmdir(dir_name3, true) == 0);
 
   printf("test_fs.c successfully finished\n");
   return EXIT_SUCCESS;
