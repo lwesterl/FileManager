@@ -382,8 +382,11 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
     }
   } else if (messageWindow->messageType == ASK_DELETE) {
     // User wants to permanently remove a file
-    delete_file(true);
     close_MessageWindow();
+    delete_file(true);
+  } else if (messageWindow->messageType == ASK_OVERWRITE) {
+    close_MessageWindow();
+    paste_files(true);
   }
   else {
     close_MessageWindow();
@@ -434,7 +437,7 @@ void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpoin
   if (menuItem == mainWindow->contextMenu->copy) {
     copy_files();
   } else if (menuItem == mainWindow->contextMenu->paste) {
-    paste_files();
+    paste_files(false);
   } else if (menuItem == mainWindow->contextMenu->rename) {
     rename_file();
   } else if (menuItem == mainWindow->contextMenu->create_folder) {
@@ -635,6 +638,7 @@ void delete_file(bool finalize) {
     strcpy(msg, promt);
     strcat(msg, (const char *) filename);
     Session_message(session, msg);
+    free(msg);
     transition_MessageWindow(ASK_DELETE, session->message);
   }
   g_free(filename);
@@ -670,24 +674,53 @@ void copy_files() {
   }
 }
 
-void paste_files() {
+void paste_files(const bool overwrite) {
+  int ret;
   const char *pwd;
   if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
     pwd = local_pwd;
   } else {
     pwd = remote_pwd;
   }
-  if (fileCopies) iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd);
+  if (fileCopies) {
+    ret = iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd, overwrite);
+    if ((ret == FILE_ALREADY_EXISTS) || (ret == DIR_ALREADY_EXISTS)) {
+      // Prompt user whether to overwrite the existing files
+      const char *info = "Do you want to overwrite files in:\n";
+      char *msg = malloc(strlen(info) + strlen(pwd) +1);
+      if (msg) {
+        strcpy(msg, info);
+        strcat(msg, pwd);
+        Session_message(session, msg);
+        free(msg);
+        transition_MessageWindow(ASK_OVERWRITE, session->message);
+      }
+    }
+  }
 }
 
-void paste_file(const FileCopy_t *fileCopy, const void *pwd) {
+int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite) {
   const char *dir;
   if (pwd) {
     dir = (const char *) pwd;
-    printf("pwd: %s, filaname: %s, filepath: %s, remote: %d\n",
-            dir, fileCopy->filename, fileCopy->filepath, fileCopy->remote);
-
+    if (strcmp(dir, local_pwd) == 0) {
+      if (fileCopy->remote) {
+        // From remote to local
+      } else {
+        // From local to local
+        int ret = fs_copy_files(fileCopy->filepath, fileCopy->filename, dir, true, overwrite);
+        show_FileStore(local_pwd, false);
+        return ret;
+      }
+    } else {
+      if (fileCopy->remote) {
+        // From remote to remote
+      } else {
+        // From local to remote
+      }
+    }
   }
+  return FILE_COPY_FAILED;
 }
 
 gchar *get_selected_filename() {

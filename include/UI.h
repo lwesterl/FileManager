@@ -142,7 +142,8 @@ typedef struct {
 enum MessageType {
   ASK_SSH, /**< A message contains a ssh key which needs user interaction */
   INFO_ERROR, /**< A message is either an info or an error message */
-  ASK_DELETE /**< Ask user whether he/she wants to permanently delete file */
+  ASK_DELETE, /**< Ask user whether he/she wants to permanently delete file */
+  ASK_OVERWRITE /**< Ask user whether to overwrite existing files */
 };
 
 /**
@@ -493,8 +494,9 @@ void copy_files();
   *   entering this function
   *   @details This will call paste_file for each entry in fileCopies. This is
   *   the function which is called after the paste button is pressed
+  *   @param overwrite Whether to overwrite existing files
   */
-void paste_files();
+void paste_files(const bool overwrite);
 
 /**
   *   @brief Paste single file from a fileCopies entry to the selected location
@@ -502,7 +504,7 @@ void paste_files();
   *   @param fileCopy Pointer to a FileCopy struct
   *   @param pwd Present working directory as void pointer (casted to char *)
   */
-void paste_file(const FileCopy_t *fileCopy, const void *pwd);
+int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite);
 
 /**
   *   @brief Get file currently selected in mainWindow->contextMenu->ContextMenuEmitter
