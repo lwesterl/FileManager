@@ -154,10 +154,13 @@ inline static GSList *append_FileCopyList(GSList *fileCopyList, FileCopy_t *file
   *   @param fileCopyList A GSList which contains FileCopy structs
   *   @param f Pointer to a function which is executed for each entry in the fileCopies
   *   @param ptr Additional pointer which is passed to the function
+  *   @param overwrite Whether to overwrite existing files
+  *   @return 0 on success, < 0 on error (this requires f to return values in this fashion)
   */
-void iterate_FileCopyList( GSList *fileCopyList,
-                           void f (const FileCopy_t*, const void *),
-                           const void *ptr);
+int iterate_FileCopyList(  GSList *fileCopyList,
+                            int f (const FileCopy_t*, const void *, const bool),
+                            const void *ptr,
+                            const bool overwrite);
 
 /* Local filesystem management */
 

@@ -63,6 +63,8 @@ int main() {
     assert(fs_copy_dir(src_dir, src_dir, dst_dir, false, false) == DIR_ALREADY_EXISTS);
     assert(fs_copy_dir(src_dir, src_dir, dst_dir, true, false) == DIR_ALREADY_EXISTS);
     assert(fs_copy_dir(src_dir, src_dir, dst_dir, true, true) == FILE_WRITTEN_SUCCESSFULLY);
+    assert(fs_copy_files(src_dir, src_dir, dst_dir, true, false) == DIR_ALREADY_EXISTS);
+    assert(fs_copy_files(src_dir, src_dir, dst_dir, true, true) == FILE_WRITTEN_SUCCESSFULLY);
   }
   assert(fs_rmdir(src_dir, true) == 0);
   assert(fs_rmdir(dst_dir, true) == 0);

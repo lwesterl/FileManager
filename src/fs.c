@@ -15,15 +15,18 @@ void iterate_FileList(GSList *files, void f (File_t *, void *), void *ptr) {
   } while ((nxt = nxt->next) != NULL);
 }
 
-void iterate_FileCopyList( GSList *fileCopyList,
-                           void f (const FileCopy_t *, const void *),
-                           const void *ptr) {
+int iterate_FileCopyList(  GSList *fileCopyList,
+                            int f (const FileCopy_t *, const void *, const bool),
+                            const void *ptr,
+                            const bool overwrite) {
   GSList *nxt = fileCopyList;
   do {
     if (nxt) {
-      f((FileCopy_t *) nxt->data, ptr);
+      int ret = f((FileCopy_t *) nxt->data, ptr, overwrite);
+      if (ret < 0) return ret;
     }
   } while ((nxt = nxt->next) != NULL);
+  return 0;
 }
 
 /* Local filesystem management */
@@ -262,7 +265,7 @@ enum FileStatus fs_copy_files(  const char *src,
   if (stat(src, &st) == 0) {
     if (st.st_mode & S_IFDIR) {
       // Copy directory
-      return fs_copy_files(src, filename, dst, recursive, overwrite);
+      return fs_copy_dir(src, filename, dst, recursive, overwrite);
     } else {
       // Copy file
       return fs_copy_file(src, filename, dst, overwrite);
