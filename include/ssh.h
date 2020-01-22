@@ -157,6 +157,7 @@ GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_nam
   *   @param len buff length in bytes
   *   @param overwrite Whether to overwrite if the file already exists
   *   @return FileStatus (sets corresponding error message, @see Session_message)
+  *   @remark This does work correctly with long files
   */
 enum FileStatus sftp_session_write_file(  Session *session,
                                           const char *filename,
@@ -208,4 +209,35 @@ int sftp_session_rmdir(Session *session, const char *dir_name, bool recursive);
   */
 int sftp_session_remove_completely_file(Session *session, const char *filepath);
 
+/**
+  *   @brief Paste file from local filesystem to remote
+  *   @param session Session struct which contains already established sftp session
+  *   @param local_filepath Path to the file to be copied on the local filesystem
+  *   @param remote_dir Target directory in the remote filesystem (parent directory)
+  *   @param filename File or directory which is copied
+  *   @param overwrite Whether to overwrite possible already existing remote files
+  *   @remark This is a recursive function. It does not work correctly with long files
+  *   @return 0 on success, otherwise return < 0
+  */
+enum FileStatus sftp_session_copy_to_remote(  Session *session,
+                                              const char *local_filepath,
+                                              const char *remote_dir,
+                                              const char *filename,
+                                              const bool overwrite);
+
+/**
+  *   @brief Copy file from remote to local filesystem
+  *   @param session Session struct which contains already established sftp session
+  *   @param local_dir Target directory (parent directory) on local filesystem
+  *   @param remote_dir Directory on the remote filesystem (the actual directory, not parent dir)
+  *   @param filename File or directory which is copied
+  *   @param overwrite Whether to overwrite possible already existing local files
+  *   @remark This is a recursive function
+  *   @return 0 on success, otherwise return  < 0
+  */
+int sftp_session_copy_from_remote(  Session *session,
+                                    const char *local_dir,
+                                    const char *remote_filepath,
+                                    const char *filename,
+                                    const bool overwrite);
 #endif // end SSH_HEADER

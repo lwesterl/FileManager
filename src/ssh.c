@@ -317,11 +317,11 @@ GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_nam
   return files;
 }
 
-enum FileStatus sftp_session_write_file(Session *session,
-                            const char *filename,
-                            const void *buff,
-                            const size_t len,
-                            const bool overwrite)
+enum FileStatus sftp_session_write_file(  Session *session,
+                                          const char *filename,
+                                          const void *buff,
+                                          const size_t len,
+                                          const bool overwrite)
 {
   int write_flags = overwrite ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY | O_CREAT;
   int permissions = S_IRWXU;
@@ -338,8 +338,8 @@ enum FileStatus sftp_session_write_file(Session *session,
     Session_message(session, get_error(ERROR_WRITING_TO_FILE));
     return FILE_WRITE_FAILED;
   }
-  size_t count = sftp_write(file, buff, len);
-  if (count != len) {
+  ssize_t count = sftp_write(file, buff, len);
+  if (count != (int) len) {
     Session_message(session, get_error(ERROR_OPENING_FILE));
     return FILE_WRITE_FAILED;
   }
@@ -460,4 +460,77 @@ int sftp_session_remove_completely_file(Session *session, const char *filepath) 
     Session_message(session, get_error(ERROR_DISPLAYING_REMOTE_FILES));
   }
   return ret;
+}
+
+enum FileStatus sftp_session_copy_to_remote(  Session *session,
+                                              const char *local_filepath,
+                                              const char *remote_dir,
+                                              const char *filename,
+                                              const bool overwrite)
+{
+  int ret;
+  struct stat st = {0};
+  char *remote_filepath = construct_filepath(remote_dir, filename);
+  if (local_filepath && remote_filepath) {
+    ret = stat(local_filepath, &st);
+    if (ret != 0) {
+      free(remote_filepath);
+      return FILE_COPY_FAILED;
+    }
+    if (S_ISDIR(st.st_mode)) {
+      // Copy directory
+      DIR *dir = NULL;
+      struct dirent *dt = NULL;
+      dir = opendir(local_filepath);
+      if (!dir) {
+        free(remote_filepath);
+        return FILE_COPY_FAILED;
+      }
+      // Create the dir on remote
+      ret = sftp_session_mkdir(session, remote_filepath);
+      if (ret < 0) {
+        free(remote_filepath);
+        closedir(dir);
+        return FILE_COPY_FAILED;
+      }
+      while ((dt = readdir(dir)) != NULL) {
+        if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
+          char *new_local_path = construct_filepath(local_filepath, dt->d_name);
+          if (!new_local_path) {
+            free(remote_filepath);
+            closedir(dir);
+            return FILE_COPY_FAILED;
+          }
+          ret = sftp_session_copy_to_remote(session, new_local_path, remote_filepath, dt->d_name, overwrite);
+          free(new_local_path);
+          if (ret < 0) {
+            free(remote_filepath);
+            closedir(dir);
+            return ret;
+          }
+        }
+      }
+      closedir(dir);
+
+    } else {
+      // Copy file
+      struct FileContent *content = fs_read_file(local_filepath);
+      if (content) {
+        ret = sftp_session_write_file(session, remote_filepath, content->buff, (size_t) content->len, overwrite);
+        free_FileContent(content);
+        if (ret < 0) {
+          free(remote_filepath);
+          return ret;
+        }
+      } else {
+        free(remote_filepath);
+        return FILE_COPY_FAILED;
+      }
+
+    }
+    free(remote_filepath);
+    return FILE_WRITTEN_SUCCESSFULLY;
+  }
+  if (remote_filepath) free(remote_filepath);
+  return FILE_COPY_FAILED;
 }
