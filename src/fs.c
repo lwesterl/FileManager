@@ -273,3 +273,29 @@ enum FileStatus fs_copy_files(  const char *src,
   }
   return FILE_WRITE_FAILED;
 }
+
+struct FileContent *fs_read_file(const char *filepath) {
+  struct FileContent *content = NULL;
+  struct stat st = {0};
+  int fd = open(filepath, O_RDONLY);
+  if ((fd > 0) && (stat(filepath, &st) == 0)) {
+    content = malloc(sizeof(struct FileContent));
+    if (content) {
+      content->buff = malloc(st.st_size);
+      if (content->buff) {
+        content->len = read(fd, content->buff, st.st_size);
+        if (content->len != st.st_size) {
+          // Some error
+          free(content->buff);
+          free(content);
+          content = NULL;
+        }
+      } else {
+        free(content);
+        content = NULL;
+      }
+    }
+    close(fd);
+  }
+  return content;
+}

@@ -68,6 +68,12 @@ int main() {
   }
   assert(fs_rmdir(src_dir, true) == 0);
   assert(fs_rmdir(dst_dir, true) == 0);
+
+  struct FileContent *content = fs_read_file("Makefile");
+  assert(content->len > 0 && content->buff);
+  //printf("\n\nMakefile:\n%s\n", content->buff);
+  free_FileContent(content);
+
   printf("test_fs.c successfully finished\n");
   return EXIT_SUCCESS;
 }

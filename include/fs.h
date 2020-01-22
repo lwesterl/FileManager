@@ -71,6 +71,26 @@ struct FileCopy {
 };
 typedef struct FileCopy FileCopy_t; /**< Type for ease of use */
 
+/**
+  *   @struct FileContent
+  *   @brief Stores contents of a file
+  */
+struct FileContent {
+  char *buff; /**< Buffer for file content */
+  int len; /**< Buffer length */
+};
+
+/**
+  *   @brief Free FileContent struct instance
+  *   @param content Pointer to a FileContent struct
+  */
+inline static void free_FileContent(struct FileContent *content) {
+  if (content) {
+    if (content->buff) free(content->buff);
+    free(content);
+  }
+}
+
 
 /* Linked list management */
 
@@ -269,5 +289,13 @@ enum FileStatus fs_copy_files(  const char *src,
                                 const char *dst,
                                 const bool recursive,
                                 const bool overwrite);
+
+/**
+  *   @brief Read file from local filesystem to a buffer
+  *   @param filepath Path to the file to be read
+  *   @return Pointer to a FileContent struct or NULL in case of an error
+  *   (dynamically allocated, must be freed)
+  */
+struct FileContent* fs_read_file(const char *filepath);
 
 #endif // end FS_HEADER
