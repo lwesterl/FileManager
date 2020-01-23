@@ -113,6 +113,18 @@ enum AuthenticationAction authenticate_password(Session *session, const char *pa
 /*  Executing remote commands */
 
 /**
+  *   @brief Execute remote command
+  *   @param session Session struct which contains already established ssh session
+  *   @param cmd Command to be executed
+  *   @param res Buffer where result of the comand is updated (this needs to be a valid pointer)
+  *   @param res_len Length of the res buffer, the memory need to be pre-allocated
+  */
+int execute_remote_command( Session *session,
+                            const char *cmd,
+                            char **res,
+                            const unsigned res_len);
+
+/**
   *   @brief Get remote home directory
   *   @param Already established ssh session
   *   @return 0 on success, -1 on error (sets corresponding error message)
@@ -233,11 +245,26 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
   *   @param filename File or directory which is copied
   *   @param overwrite Whether to overwrite possible already existing local files
   *   @remark This is a recursive function
-  *   @return 0 on success, otherwise return <0 and matching FileStatus
+  *   @return 0 on success, otherwise return < 0 and matching FileStatus
   */
 enum FileStatus sftp_session_copy_from_remote(  Session *session,
                                                 const char *local_dir,
                                                 const char *remote_filepath,
+                                                const char *filename,
+                                                const bool overwrite);
+
+/**
+  *   @brief Copy files on remote filesystem
+  *   @param session Session struct which contains already established sftp session
+  *   @param src_filepath Path from which the files are copied
+  *   @param dst_dir Target directory for the copy operation (parent directory)
+  *   @param filename Name of file or directory to be copied
+  *   @param overwrite Whether to overwrite possible already existing remote files
+  *   @return 0 on success, otherwise return < 0 and matching FileStatus
+  */
+enum FileStatus sftp_session_copy_on_remote(    Session *session,
+                                                const char *src_filepath,
+                                                const char *dst_dir,
                                                 const char *filename,
                                                 const bool overwrite);
 #endif // end SSH_HEADER

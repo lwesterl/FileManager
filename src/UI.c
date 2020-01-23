@@ -707,7 +707,7 @@ int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite
     if (strcmp(dir, local_pwd) == 0) {
       if (fileCopy->remote) {
         // From remote to local
-        ret = sftp_session_copy_from_remote(session, local_pwd, fileCopy->filepath, fileCopy->filename, overwrite);
+        ret = sftp_session_copy_from_remote(session, dir, fileCopy->filepath, fileCopy->filename, overwrite);
       } else {
         // From local to local
         ret = fs_copy_files(fileCopy->filepath, fileCopy->filename, dir, true, overwrite);
@@ -716,6 +716,7 @@ int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite
     } else {
       if (fileCopy->remote) {
         // From remote to remote
+        ret = sftp_session_copy_on_remote(session, fileCopy->filepath, dir, fileCopy->filename, overwrite);
       } else {
         // From local to remote
         ret = sftp_session_copy_to_remote(session, fileCopy->filepath, dir, fileCopy->filename, overwrite);

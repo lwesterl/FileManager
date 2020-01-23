@@ -208,8 +208,12 @@ enum AuthenticationAction authenticate_password(Session *session, const char *pa
 
 // Executing remote commands
 
-int get_remote_home_dir(Session *session) {
-  char buffer[250] = {0};
+int execute_remote_command( Session *session,
+                            const char *cmd,
+                            char **res,
+                            const unsigned res_len)
+{
+  if (! *res) return -1;
   int nread, tot = 0;
   ssh_channel channel;
   channel = ssh_channel_new(session->session);
@@ -222,26 +226,37 @@ int get_remote_home_dir(Session *session) {
     ssh_channel_free(channel);
     return -1;
   }
-  if (ssh_channel_request_exec(channel, "echo $HOME") != SSH_OK) {
+  if (ssh_channel_request_exec(channel, cmd) != SSH_OK) {
     ssh_channel_close(channel);
     ssh_channel_free(channel);
     Session_message(session, get_error(SSH_REMOTE_COMMAND_ERROR));
     return -1;
   }
   do {
-    nread = ssh_channel_read(channel, buffer, sizeof(buffer), 0);
+    nread = ssh_channel_read(channel, res[tot], res_len - tot, 0);
     tot += nread;
   } while (nread > 0);
+  (*res)[tot - 1] = '\0'; // The last char is EOF/EOT, overwrite it with a null byte
   if (nread < 0) {
     ssh_channel_close(channel);
     ssh_channel_free(channel);
     Session_message(session, get_error(SSH_REMOTE_COMMAND_ERROR));
     return -1;
   }
-  buffer[tot - 1] = '\0'; // The last char is EOF/EOT, overwrite it with a null byte
+  return 0;
+}
+
+int get_remote_home_dir(Session *session) {
+  const unsigned len = 250;
+  char *buffer = malloc(len);
+  if (execute_remote_command(session, "echo $HOME", &buffer, len) != 0) {
+    free(buffer);
+    return -1;
+  }
   if (session->home_dir) free(session->home_dir);
   session->home_dir = malloc(strlen(buffer) + 1);
   strcpy(session->home_dir, buffer);
+  free(buffer);
   return 0;
 }
 
@@ -597,4 +612,45 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
   }
   free(local_filepath);
   return ret;
+}
+
+enum FileStatus sftp_session_copy_on_remote(    Session *session,
+                                                const char *src_filepath,
+                                                const char *dst_dir,
+                                                const char *filename,
+                                                const bool overwrite)
+{
+  int ret;
+  char *cmd = NULL;
+  const unsigned buff_len = 500;
+  char *buffer = malloc(buff_len);
+  char *dst_path = construct_filepath(dst_dir, filename);
+  if (!buffer || !dst_path) {
+    if (buffer) free(buffer);
+    if (dst_path) free(dst_path);
+    return FILE_COPY_FAILED;
+  }
+  sftp_attributes attr = sftp_stat(session->sftp, src_filepath);
+  bool folder = is_folder(attr->type);
+  sftp_attributes_free(attr);
+  sftp_attributes attr2 = sftp_stat(session->sftp, dst_path);
+  if (attr2) {
+    free(attr2);
+    if (!overwrite) return FILE_ALREADY_EXISTS;
+  } else if (sftp_get_error(session->sftp) != SSH_FX_NO_SUCH_FILE) {
+    free(buffer);
+    free(dst_path);
+    return FILE_COPY_FAILED;    
+  }
+  if (folder) {
+    cmd = concat_three_strings_with_spaces("cp -r", src_filepath, dst_dir);
+  } else {
+    cmd = concat_three_strings_with_spaces("cp", src_filepath, dst_dir);
+  }
+  ret = execute_remote_command(session, cmd, &buffer, buff_len);
+  free(buffer);
+  free(dst_path);
+  if (cmd) free(cmd);
+  if (ret < 0) return FILE_COPY_FAILED;
+  return FILE_WRITTEN_SUCCESSFULLY;
 }
