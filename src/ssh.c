@@ -319,12 +319,14 @@ GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_nam
 
 enum FileStatus sftp_session_write_file(  Session *session,
                                           const char *filename,
-                                          const void *buff,
+                                          const char *buff,
                                           const size_t len,
                                           const bool overwrite)
 {
-  int write_flags = overwrite ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY | O_CREAT;
+  int write_flags = overwrite ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY | O_CREAT | O_EXCL;
   int permissions = S_IRWXU;
+  int to_written = (int) len;
+  int write_len, written = 0;
 
   sftp_file file = sftp_open(session->sftp, filename, write_flags, permissions);
   if (!file) {
@@ -338,11 +340,17 @@ enum FileStatus sftp_session_write_file(  Session *session,
     Session_message(session, get_error(ERROR_WRITING_TO_FILE));
     return FILE_WRITE_FAILED;
   }
-  ssize_t count = sftp_write(file, buff, len);
-  if (count != (int) len) {
-    Session_message(session, get_error(ERROR_OPENING_FILE));
-    return FILE_WRITE_FAILED;
-  }
+  do {
+    write_len = to_written - written <= WRITE_CHUNK_SIZE ? to_written - written : WRITE_CHUNK_SIZE;
+    ssize_t count = sftp_write(file, &buff[written], write_len);
+    if (count != write_len) {
+      sftp_close(file);
+      Session_message(session, get_error(ERROR_OPENING_FILE));
+      return FILE_WRITE_FAILED;
+    }
+    written += count;
+  } while (to_written - written > 0);
+
   sftp_close(file); // No error checking because if this fails there is very little that can be done
   return FILE_WRITTEN_SUCCESSFULLY;
 }
