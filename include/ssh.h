@@ -233,11 +233,11 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
   *   @param filename File or directory which is copied
   *   @param overwrite Whether to overwrite possible already existing local files
   *   @remark This is a recursive function
-  *   @return 0 on success, otherwise return  < 0
+  *   @return 0 on success, otherwise return <0 and matching FileStatus
   */
-int sftp_session_copy_from_remote(  Session *session,
-                                    const char *local_dir,
-                                    const char *remote_filepath,
-                                    const char *filename,
-                                    const bool overwrite);
+enum FileStatus sftp_session_copy_from_remote(  Session *session,
+                                                const char *local_dir,
+                                                const char *remote_filepath,
+                                                const char *filename,
+                                                const bool overwrite);
 #endif // end SSH_HEADER

@@ -364,7 +364,7 @@ enum FileStatus sftp_session_read_file( Session *session,
   sftp_file file;
   int nread, nwritten;
   int fd;
-  int write_flags = overwrite ? O_CREAT | O_WRONLY | O_TRUNC : O_CREAT | O_WRONLY;
+  int write_flags = overwrite ? O_CREAT | O_WRONLY | O_TRUNC : O_CREAT | O_WRONLY | O_EXCL;
   int permissions = S_IRWXU;
 
   file = sftp_open(session->sftp, remote_filename, O_RDONLY, 0);
@@ -541,4 +541,60 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
   }
   if (remote_filepath) free(remote_filepath);
   return FILE_COPY_FAILED;
+}
+
+enum FileStatus sftp_session_copy_from_remote(  Session *session,
+                                                const char *local_dir,
+                                                const char *remote_filepath,
+                                                const char *filename,
+                                                const bool overwrite)
+{
+  sftp_attributes attr;
+  int ret;
+  char *local_filepath = construct_filepath(local_dir, filename);
+  if (!local_filepath) return FILE_COPY_FAILED;
+  attr = sftp_stat(session->sftp, remote_filepath);
+  bool folder = is_folder(attr->type);
+  sftp_attributes_free(attr);
+  if (folder) {
+    // Copy folder recursively from remote
+    sftp_dir dir = sftp_opendir(session->sftp, remote_filepath);
+    if (!dir) {
+      free(local_filepath);
+      return FILE_COPY_FAILED;
+    }
+    // Create the local folder
+    if (fs_mkdir(local_filepath) < 0) {
+      free(local_filepath);
+      return FILE_COPY_FAILED;
+    }
+    while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
+      if ((strcmp(attr->name, ".") != 0) && (strcmp(attr->name, "..") != 0)) {
+        char *new_remote_path = construct_filepath(remote_filepath, attr->name);
+        if (!new_remote_path) {
+          //fs_rmdir(local_filepath, false); // can do very little to errors
+          free(local_filepath);
+          sftp_attributes_free(attr);
+          sftp_closedir(dir);
+          return -1;
+        }
+        ret = sftp_session_copy_from_remote(session, local_filepath, new_remote_path, attr->name, overwrite);
+        if (ret < 0) {
+          free(new_remote_path);
+          free(local_filepath);
+          sftp_attributes_free(attr);
+          sftp_closedir(dir);
+          return ret;
+        }
+        free(new_remote_path);
+      }
+      sftp_attributes_free(attr);
+    }
+    sftp_closedir(dir);
+  } else {
+    // Copy single file from remote
+    ret = sftp_session_read_file(session, remote_filepath, local_filepath, overwrite);
+  }
+  free(local_filepath);
+  return ret;
 }
