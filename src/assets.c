@@ -96,3 +96,22 @@ char *construct_filepath(const char *pwd, const char *filename) {
   }
   return filepath;
 }
+
+char *concat_three_strings_with_spaces(const char *str1, const char *str2, const char *str3) {
+  char *str = NULL;
+  size_t len = strlen(str1) + strlen(str2) + strlen(str3);
+  size_t tmp_len;
+  str = malloc(len + 3); // 2 spaces and null byte
+  if (str) {
+    strcpy(str, str1);
+    tmp_len = strlen(str);
+    str[tmp_len] = ' ';
+    str[tmp_len + 1] = '\0';
+    strcat(str, str2);
+    tmp_len = strlen(str);
+    str[tmp_len] = ' ';
+    str[tmp_len + 1] = '\0';
+    strcat(str, str3);
+  }
+  return str;
+}

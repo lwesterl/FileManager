@@ -48,6 +48,12 @@ int main() {
   local_pwd = cd_enter_pwd(local_pwd, "test");
   assert(strcmp(local_pwd, "/home/test/test") == 0);
 
+  const char *str1 = "test1";
+  const char *str2 = "test2";
+  const char *str3 = "test3";
+  char *result = concat_three_strings_with_spaces(str1, str2, str3);
+  assert(strcmp(result, "test1 test2 test3") == 0);
+  free(result);
 
   clear_assets();
 

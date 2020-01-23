@@ -120,4 +120,14 @@ char *cd_enter_pwd(char *pwd, const char *dir_name);
   */
 char *construct_filepath(const char *pwd, const char *filename);
 
+/**
+  *   @brief Concat three strings with spaces between the strings
+  *   @param str1 The 1st string
+  *   @param str2 The 2nd string
+  *   @param str3 The 3rd string
+  *   @return Pointer to a dynamically alloated string which is concatenation of
+  *   the three inputs (must be free elsewhere) or NULL in case of an error
+  */
+char *concat_three_strings_with_spaces(const char *str1, const char *str2, const char *str3);
+
 #endif // end ASSETS_HEADER
