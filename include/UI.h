@@ -484,12 +484,13 @@ void delete_file(bool finalize);
   *   @remark This won't copy the files, it only stores paths to selected files.
   *   mainWindow->contextMenu->ContextMenuEmitter must be set prior entering this
   *   function
-  *   @Todo Multifile support
+  *   @todo Multifile support
   */
 void copy_files();
 
 /**
   *   @brief Paste files from fileCopies to selected location
+  *   @param overwrite Whether to overwrite possible already existing files
   *   @remark mainWindow->contextMenu->ContextMenuEmitter must be set prior
   *   entering this function
   *   @details This will call paste_file for each entry in fileCopies. This is
@@ -500,6 +501,7 @@ void paste_files(const bool overwrite);
 
 /**
   *   @brief Paste single file from a fileCopies entry to the selected location
+  *   @param overwrite Whether to overwrite possible already existing files
   *   @remark This should be only called from paste_files via iterate_FileCopyList
   *   @param fileCopy Pointer to a FileCopy struct
   *   @param pwd Present working directory as void pointer (casted to char *)

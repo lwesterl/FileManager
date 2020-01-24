@@ -245,6 +245,7 @@ int remove_completely(const char *filepath);
   *   @param src Source file path (this needs to be a file not directory)
   *   @param filename Source file name
   *   @param dst Destination path (this is the parent directory)
+  *   @param overwrite Whether to overwrite a possibly already existing file
   *   @return FileStatus (FILE_WRITTEN_SUCCESSFULLY = ok, FILE_ALREADY_EXISTS = you may try
   *   again with overwrite set to true, FILE_COPY_FAILED = some severe error)
   *   @remark This allows truncating a file when src and dst point to same path;
@@ -260,6 +261,7 @@ enum FileStatus fs_copy_file( const char *src,
   *   @param src Source directory path (this is path to the dir itself)
   *   @param dirname Source directory name
   *   @param dst Destination directory path (this is path to the parent directory)
+  *   @param overwrite Whether to overwrite a possibly already existing directory
   *   @param recursive Whether to copy the directory recursively
   *   @return FileStatus (FILE_WRITTEN_SUCCESSFULLY = ok, FILE_ALREADY_EXISTS = you may try
   *   again with overwrite set to true, DIR_ALREADY_EXISTS = you may try again with overwrite

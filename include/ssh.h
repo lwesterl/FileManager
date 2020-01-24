@@ -126,7 +126,7 @@ int execute_remote_command( Session *session,
 
 /**
   *   @brief Get remote home directory
-  *   @param Already established ssh session
+  *   @param session Already established ssh session
   *   @return 0 on success, -1 on error (sets corresponding error message)
   *   @remark This should be called only once per session
   */
@@ -241,7 +241,7 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
   *   @brief Copy file from remote to local filesystem
   *   @param session Session struct which contains already established sftp session
   *   @param local_dir Target directory (parent directory) on local filesystem
-  *   @param remote_dir Directory on the remote filesystem (the actual directory, not parent dir)
+  *   @param remote_filepath Filepath on the remote filesystem (the actual file, not parent dir)
   *   @param filename File or directory which is copied
   *   @param overwrite Whether to overwrite possible already existing local files
   *   @remark This is a recursive function
