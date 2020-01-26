@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "ssh.h"
 #include "fs.h"
@@ -205,6 +206,61 @@ enum {
   N_COLUMNS /**< Used for GtkListStore, amount of columns: 3 */
 };
 
+enum WorkerType {
+  PASTE_FILES, /**< Paste copied files */
+  DELETE_LOCAL, /**< Delete local files */
+  DELETE_REMOTE /**< Delete remote files */
+};
+
+/**
+  *   @struct WorkerThread_t
+  *   @brief Data passed to worker threads
+  *   @details Depending on the work type only some values are used, non-used
+  *   values are set to NULL or 0. (for PASTE_FILES filepath==NULL and for
+  *   DELETE_LOCAL and DELETE_REMOTE only filepath is not NULL, overwrite==0)
+  */
+typedef struct {
+  char *pwd; /**< Present working directory passed for the worker thread */
+  GSList *fileCopies; /**< A list of FileCopy structs passed for the worker thread */
+  bool overwrite; /**< Whether to overwrite files or not */
+  bool target_remote; /**< Whether the target filepath is on remote */
+  char *filepath; /**< FilePath passed to the worker thread */
+  enum WorkerType workType; /**< Specifies what thread should do and passed values */
+} WorkerThread_t;
+
+/**
+  *   @brief Free memory used for WorkerThread_t
+  *   @param ptr Pointer to a WorkerThread_t to be freed
+  */
+static inline void free_WorkerThread_t(WorkerThread_t *ptr) {
+  if (ptr) {
+    if (ptr->pwd) free(ptr->pwd);
+    if (ptr->fileCopies) clear_FileCopyList(ptr->fileCopies);
+    if (ptr->filepath) free(ptr->filepath);
+    free(ptr);
+  }
+}
+
+/**
+  *   @struct WorkerMessage_t
+  *   @brief Contains message from worker to the main thread
+  */
+typedef struct {
+  int msg; /**< Int message from the worker */
+  char *pwd; /**< pwd where the workers is operating */
+  enum WorkerType workType; /**< Specifies which work the worker has executed */
+} WorkerMessage_t;
+
+/**
+  *   @brief Free memory used for WorkerMessage_t
+  *   @param msg Pointer to a WorkerMessage_t
+  */
+static inline void free_WorkerMessage_t(WorkerMessage_t *msg) {
+  if (msg) {
+    if (msg->pwd) free(msg->pwd);
+    free(msg);
+  }
+}
 
 // Global variables
 GtkBuilder *builder; /**< GtkBuilder used to create all the windows */
@@ -216,8 +272,34 @@ Session *session; /**< SSH Session pointer */
 FileStore *remoteFileStore; /**< Used to store displayed elements which correspond to RemoteFiles */
 FileStore *localFileStore; /**< Uses to store displayed elements which correspond to LocalFiles */
 GSList *fileCopies; /**< GSList which stores FileCopy structs for files selected for a copy operation */
+GAsyncQueue *asyncQueue; /**< Queue used for cross-thread communication, only main thread should listen for incoming messages */
+volatile sig_atomic_t worker_running; /**< Whether a worker is running */
+volatile sig_atomic_t working_on_remote; /**< Whether the worker is working on remote filesystem */
+
+
+/* Queue (Worker thread) handling */
+
+/**
+  *   @brief Check whether asyncQueue has received a message
+  *   @remark This should be executed when no other higher priority task are run
+  *   and a worker thread has been created
+  *   @param user_data Pointer to the queue
+  *   @return Whether to keep running this: we want to stop running this after
+  *   the worker exits
+  */
+gboolean check_asyncQueue(gpointer user_data);
+
+/**
+  *   @brief Init worker to execute the specific task
+  *   @param ptr Void pointer which should be casted to WorkerThread_t
+  *   @remark This exists the detachded thread but prior sends a message to the
+  *   main thread using asyncQueue (message is a WorkerMessage_t)
+  *   @return NULL from pthread_exit
+  */
+void *init_worker(void *ptr);
 
 /* UI initialization */
+
 /**
   *   @brief Initialize UI from the glade file
   *   @param argc Number of command line arguments
@@ -489,6 +571,13 @@ void delete_file(bool finalize);
 void copy_files();
 
 /**
+  *   @brief Paste files from using a worker thread
+  *   @details This will create the worker thread
+  *   @remark This must not be called if a worker is already running (worker_running == 1)
+  */
+void paste_files_threaded(const bool overwrite);
+
+/**
   *   @brief Paste files from fileCopies to selected location
   *   @param overwrite Whether to overwrite possible already existing files
   *   @remark mainWindow->contextMenu->ContextMenuEmitter must be set prior
@@ -503,10 +592,15 @@ void paste_files(const bool overwrite);
   *   @brief Paste single file from a fileCopies entry to the selected location
   *   @param overwrite Whether to overwrite possible already existing files
   *   @remark This should be only called from paste_files via iterate_FileCopyList
+  *   or from init_worker
   *   @param fileCopy Pointer to a FileCopy struct
   *   @param pwd Present working directory as void pointer (casted to char *)
+  *   @param target_remote Whether the target is on remote
   */
-int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite);
+int paste_file( const FileCopy_t *fileCopy,
+                const void *pwd,
+                const bool overwrite,
+                const bool target_remote);
 
 /**
   *   @brief Get file currently selected in mainWindow->contextMenu->ContextMenuEmitter

@@ -6,6 +6,62 @@
 
 #include "../include/UI.h"
 
+/* Queue and worker handling */
+static pthread_t tid; /**< Worker thread */
+static pthread_attr_t tattr; /**< Attributes for the thread */
+
+
+gboolean check_asyncQueue(gpointer user_data) {
+  gpointer data;
+  data = g_async_queue_try_pop((GAsyncQueue *) user_data);
+  if (data) {
+    // Go through the worker return value
+    WorkerMessage_t *worker_msg = (WorkerMessage_t *) data;
+    printf("worker_msg->msg: %d\n", worker_msg->msg);
+    if ((worker_msg->msg == FILE_ALREADY_EXISTS) || (worker_msg->msg == DIR_ALREADY_EXISTS)) {
+      // Prompt user whether to overwrite the existing files
+      const char *info = OVERWRITE_PROMT_MSG;
+      char *msg = malloc(strlen(info) + strlen(worker_msg->pwd) +1);
+      if (msg) {
+        strcpy(msg, info);
+        strcat(msg, worker_msg->pwd);
+        Session_message(session, msg);
+        free(msg);
+        transition_MessageWindow(ASK_OVERWRITE, session->message);
+      }
+    } else if (worker_msg->msg != FILE_WRITTEN_SUCCESSFULLY) {
+      Session_message(session, get_error(ERROR_FILE_COPY_FAILED));
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
+    free_WorkerMessage_t(worker_msg);
+    return FALSE;
+  }
+  // TODO update file transfer progress here
+  return TRUE;
+}
+
+void *init_worker(void *ptr) {
+  WorkerThread_t *data = (WorkerThread_t *) ptr;
+  int ret;
+  if (data->workType == PASTE_FILES) {
+    printf("Thread hello paste files\n");
+    ret = iterate_FileCopyList(data->fileCopies, paste_file, (const void *) data->pwd, data->overwrite, data->target_remote);
+    // Send a message to the main thread
+    printf("Thread, pasting completed\n");
+    WorkerMessage_t *msg = malloc(sizeof(WorkerMessage_t));
+    if (msg) {
+      msg->msg = ret;
+      msg->workType = data->workType;
+      msg->pwd = malloc(strlen(data->pwd) + 1);
+      if (msg->pwd) strcpy(msg->pwd, data->pwd);
+    }
+    g_async_queue_push(asyncQueue, msg);
+  }
+  free_WorkerThread_t(data);
+  worker_running = 0;
+  pthread_exit(NULL);
+}
+
 /* UI initializations */
 void initUI(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
@@ -13,6 +69,10 @@ void initUI(int argc, char *argv[]) {
   remoteFileStore = NULL;
   localFileStore = NULL;
   fileCopies = NULL;
+  worker_running = 0;
+  working_on_remote = 0;
+  pthread_attr_init(&tattr);
+  pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
 
   builder = gtk_builder_new_from_file(LAYOUT_PATH);
 
@@ -23,11 +83,18 @@ void initUI(int argc, char *argv[]) {
   gtk_builder_connect_signals(builder, NULL);
   gtk_widget_show_all(connectWindow->ConnectDialog);
 
+  asyncQueue = g_async_queue_new();
+
   // Start main event loop
   gtk_main();
 }
 
 void quitUI() {
+  while (worker_running) {
+    printf("Waiting for a worker to finish\n");
+  }
+  g_async_queue_unref(asyncQueue);
+
     // Quit gtk event loop
   gtk_main_quit();
   if (session) {
@@ -271,11 +338,11 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
 
 void show_ContextMenu_buttons(bool file_selected) {
   gboolean selected = (gboolean) file_selected;
-  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->copy), selected);
-  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->paste), !selected);
-  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->rename), selected);
-  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->create_folder), !selected);
-  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->delete), selected);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->copy), selected && !worker_running);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->paste), !selected && !worker_running);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->rename), selected && !worker_running);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->create_folder), !selected && !worker_running);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->delete), selected && !worker_running);
 }
 
 
@@ -296,25 +363,31 @@ void LeftFileBackButton_action(__attribute__((unused)) GtkButton *LeftFileBackBu
 }
 
 void LeftNewFolderButton_action(__attribute__((unused)) GtkButton *LeftNewFolderButton) {
-  mainWindow->contextMenu->ContextMenuEmitter = mainWindow->LeftFileView;
-  create_folder();
+  if (!worker_running) {
+    mainWindow->contextMenu->ContextMenuEmitter = mainWindow->LeftFileView;
+    create_folder();
+  }
 }
 
 void RightFileHomeButton_action(__attribute__((unused)) GtkButton *RightFileHomeButton) {
-  if (session->home_dir) {
+  if (session->home_dir && (!worker_running || !working_on_remote)) {
     remote_pwd = change_pwd(remote_pwd, session->home_dir);
     update_FileView(true);
   }
 }
 
 void RightFileBackButton_action(__attribute__((unused)) GtkButton *RightFileBackButton) {
-  remote_pwd = cd_back_pwd(remote_pwd);
-  update_FileView(true);
+  if (!worker_running || !working_on_remote) {
+    remote_pwd = cd_back_pwd(remote_pwd);
+    update_FileView(true);
+  }
 }
 
 void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFolderButton) {
-  mainWindow->contextMenu->ContextMenuEmitter = mainWindow->RightFileView;
-  create_folder();
+  if (!worker_running) {
+    mainWindow->contextMenu->ContextMenuEmitter = mainWindow->RightFileView;
+    create_folder();
+  }
 }
 
 void QuitButton_action(__attribute__((unused)) GtkButton *QuitButton) {
@@ -386,7 +459,7 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
     delete_file(true);
   } else if (messageWindow->messageType == ASK_OVERWRITE) {
     close_MessageWindow();
-    paste_files(true);
+    paste_files_threaded(true);
   }
   else {
     close_MessageWindow();
@@ -414,6 +487,7 @@ gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute_
         }
 
       } else {
+        if (worker_running && working_on_remote) return FALSE;
         gtk_tree_model_get_iter((GtkTreeModel *) remoteFileStore->listStore, &it, path);
         gtk_tree_model_get((GtkTreeModel *) remoteFileStore->listStore, &it,
                                             STRING_COLUMN, &filename,
@@ -437,7 +511,7 @@ void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpoin
   if (menuItem == mainWindow->contextMenu->copy) {
     copy_files();
   } else if (menuItem == mainWindow->contextMenu->paste) {
-    paste_files(false);
+    paste_files_threaded(false);
   } else if (menuItem == mainWindow->contextMenu->rename) {
     rename_file();
   } else if (menuItem == mainWindow->contextMenu->create_folder) {
@@ -611,6 +685,7 @@ void create_folder() {
   gtk_widget_show_all(popOverDialog->PopOverDialog);
 }
 
+// TODO add this to another thread
 void delete_file(bool finalize) {
   gchar *filename = get_selected_filename();
   if (finalize) {
@@ -674,19 +749,60 @@ void copy_files() {
   }
 }
 
+void paste_files_threaded(const bool overwrite) {
+  WorkerThread_t *worker_data = NULL;
+  const char *pwd;
+  if (fileCopies) {
+    worker_data = malloc(sizeof(WorkerThread_t));
+    if (worker_data) {
+      if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+        pwd = local_pwd;
+        worker_data->target_remote = false;
+      } else {
+        pwd = remote_pwd;
+        worker_data->target_remote = true;
+      }
+      worker_data->pwd = malloc(strlen(pwd) + 1);
+      if (worker_data->pwd) {
+        strcpy(worker_data->pwd, pwd);
+        worker_data->fileCopies = copy_FileCopyList(fileCopies);
+        if (worker_data->fileCopies == NULL) goto error;
+        worker_data->overwrite = overwrite;
+        worker_data->workType = PASTE_FILES;
+        worker_data->filepath = NULL;
+        // Create new worker thread
+        if (pthread_create(&tid, &tattr, init_worker, (void *) worker_data) != 0) goto error;
+        g_idle_add ((GSourceFunc) check_asyncQueue, asyncQueue);
+        worker_running = 1;
+        return;
+      } else goto error;
+    } else goto error;
+  }
+  error:
+    if (worker_data) {
+      if (worker_data->pwd) free(worker_data->pwd);
+      if (worker_data->fileCopies) clear_FileCopyList(worker_data->fileCopies);
+      free(worker_data);
+      Session_message(session, get_error(FILE_COPY_FAILED));
+      transition_MessageWindow(INFO_ERROR, session->message);
+    }
+}
+
 void paste_files(const bool overwrite) {
   int ret;
   const char *pwd;
+  bool target_remote = false;
   if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
     pwd = local_pwd;
   } else {
     pwd = remote_pwd;
+    target_remote = true;
   }
   if (fileCopies) {
-    ret = iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd, overwrite);
+    ret = iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd, overwrite, target_remote);
     if ((ret == FILE_ALREADY_EXISTS) || (ret == DIR_ALREADY_EXISTS)) {
       // Prompt user whether to overwrite the existing files
-      const char *info = "Do you want to overwrite files in:\n";
+      const char *info = OVERWRITE_PROMT_MSG;
       char *msg = malloc(strlen(info) + strlen(pwd) +1);
       if (msg) {
         strcpy(msg, info);
@@ -699,20 +815,26 @@ void paste_files(const bool overwrite) {
   }
 }
 
-int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite) {
+int paste_file( const FileCopy_t *fileCopy,
+                const void *pwd,
+                const bool overwrite,
+                const bool target_remote)
+{
   const char *dir;
   int ret;
   if (pwd) {
     dir = (const char *) pwd;
-    if (strcmp(dir, local_pwd) == 0) {
+    working_on_remote = 1;
+    if (!target_remote) {
       if (fileCopy->remote) {
         // From remote to local
         ret = sftp_session_copy_from_remote(session, dir, fileCopy->filepath, fileCopy->filename, overwrite);
       } else {
         // From local to local
+        working_on_remote = 0;
         ret = fs_copy_files(fileCopy->filepath, fileCopy->filename, dir, true, overwrite);
       }
-      show_FileStore(local_pwd, false);
+      show_FileStore(pwd, false);
     } else {
       if (fileCopy->remote) {
         // From remote to remote
@@ -721,7 +843,7 @@ int paste_file(const FileCopy_t *fileCopy, const void *pwd, const bool overwrite
         // From local to remote
         ret = sftp_session_copy_to_remote(session, fileCopy->filepath, dir, fileCopy->filename, overwrite);
       }
-      show_FileStore(remote_pwd, true);
+      show_FileStore(pwd, true);
     }
     return ret;
   }
