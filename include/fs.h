@@ -175,12 +175,21 @@ inline static GSList *append_FileCopyList(GSList *fileCopyList, FileCopy_t *file
   *   @param f Pointer to a function which is executed for each entry in the fileCopies
   *   @param ptr Additional pointer which is passed to the function
   *   @param overwrite Whether to overwrite existing files
+  *   @param target_remote Whether the target filepath is on remote
   *   @return 0 on success, < 0 on error (this requires f to return values in this fashion)
   */
-int iterate_FileCopyList(  GSList *fileCopyList,
-                            int f (const FileCopy_t*, const void *, const bool),
+int iterate_FileCopyList(   GSList *fileCopyList,
+                            int f (const FileCopy_t*, const void *, const bool, const bool),
                             const void *ptr,
-                            const bool overwrite);
+                            const bool overwrite,
+                            const bool target_remote);
+
+/**
+  *   @brief Copy GSList containing FileCopy structs
+  *   @param srcList To be copied (pointer to the start of the list)
+  *   @return Pointer to the start of the copy
+  */
+GSList *copy_FileCopyList(GSList *srcList);
 
 /* Local filesystem management */
 
@@ -194,7 +203,8 @@ bool file_exists(const char *filename);
 /**
   *   @brief Create a new directory
   *   @param dir_name Path to the directory to be created
-  *   @return FILE_WRITTEN_SUCCESSFULLY on success, MKDIR_FAILED on error
+  *   @return FILE_WRITTEN_SUCCESSFULLY on success, MKDIR_FAILED or DIR_ALREADY_EXISTS
+  *   on error
   */
 enum FileStatus fs_mkdir(const char *dir_name);
 

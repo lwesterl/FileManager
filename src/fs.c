@@ -15,18 +15,51 @@ void iterate_FileList(GSList *files, void f (File_t *, void *), void *ptr) {
   } while ((nxt = nxt->next) != NULL);
 }
 
-int iterate_FileCopyList(  GSList *fileCopyList,
-                            int f (const FileCopy_t *, const void *, const bool),
+int iterate_FileCopyList(   GSList *fileCopyList,
+                            int f (const FileCopy_t *, const void *, const bool, const bool),
                             const void *ptr,
-                            const bool overwrite) {
+                            const bool overwrite,
+                            const bool target_remote) {
   GSList *nxt = fileCopyList;
   do {
     if (nxt) {
-      int ret = f((FileCopy_t *) nxt->data, ptr, overwrite);
+      int ret = f((FileCopy_t *) nxt->data, ptr, overwrite, target_remote);
       if (ret < 0) return ret;
     }
   } while ((nxt = nxt->next) != NULL);
   return 0;
+}
+
+GSList *copy_FileCopyList(GSList *srcList) {
+  GSList *ptr = srcList;
+  GSList *new_list = NULL;
+  GSList *first = NULL;
+  FileCopy_t *data;
+  if (ptr) {
+    do {
+      FileCopy_t *new = malloc(sizeof(FileCopy_t));
+      if (!new && new_list) {
+        clear_FileCopyList(new_list);
+        return NULL;
+      }
+      data = (FileCopy_t *) ptr->data;
+      new->remote = data->remote;
+      new->filename = malloc(strlen(data->filename) + 1);
+      new->filepath = malloc(strlen(data->filepath) + 1);
+      if (!new->filename || !new->filepath) {
+        if (new->filename) free(new->filename);
+        if (new->filepath) free(new->filepath);
+        free(new);
+        clear_FileCopyList(new_list);
+        return NULL;
+      }
+      strcpy(new->filename, data->filename);
+      strcpy(new->filepath, data->filepath);
+      new_list = append_FileCopyList(new_list, new);
+      if (!first) first = new_list;
+    } while ((ptr = ptr->next) != NULL);
+  }
+  return first;
 }
 
 /* Local filesystem management */
@@ -42,7 +75,7 @@ enum FileStatus fs_mkdir(const char *dir_name) {
     if (mkdir(dir_name, permissions) != 0) {
       return MKDIR_FAILED;
     }
-  }
+  } else return DIR_ALREADY_EXISTS;
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 

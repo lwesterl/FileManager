@@ -279,10 +279,10 @@ int init_sftp_session(Session *session) {
 
 enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name) {
   int permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
-  if(sftp_mkdir(session->sftp, dir_name, permissions) != SSH_OK) {
-    if (sftp_get_error(session->sftp) != SSH_FX_FILE_ALREADY_EXISTS) {
-      Session_message(session, ssh_get_error(session->session));
-      return FILE_WRITTEN_SUCCESSFULLY;
+  if (sftp_mkdir(session->sftp, dir_name, permissions) != SSH_OK) {
+    if (sftp_get_error(session->sftp) == SSH_FX_FILE_ALREADY_EXISTS) {
+      //Session_message(session, ssh_get_error(session->session));
+      return DIR_ALREADY_EXISTS;
     }
     return MKDIR_FAILED;
   }
@@ -511,11 +511,12 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
       }
       // Create the dir on remote
       ret = sftp_session_mkdir(session, remote_filepath);
-      if (ret < 0) {
+      if (ret < 0 && !(overwrite && ret == DIR_ALREADY_EXISTS)) {
         free(remote_filepath);
         closedir(dir);
-        return FILE_COPY_FAILED;
+        return ret;
       }
+      ret = 0;
       while ((dt = readdir(dir)) != NULL) {
         if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
           char *new_local_path = construct_filepath(local_filepath, dt->d_name);
@@ -579,10 +580,12 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
       return FILE_COPY_FAILED;
     }
     // Create the local folder
-    if (fs_mkdir(local_filepath) < 0) {
+    ret = fs_mkdir(local_filepath);
+    if (ret < 0 && !(overwrite && ret == DIR_ALREADY_EXISTS)) {
       free(local_filepath);
-      return FILE_COPY_FAILED;
+      return ret;
     }
+    ret = 0; // reset
     while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
       if ((strcmp(attr->name, ".") != 0) && (strcmp(attr->name, "..") != 0)) {
         char *new_remote_path = construct_filepath(remote_filepath, attr->name);
@@ -591,7 +594,7 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
           free(local_filepath);
           sftp_attributes_free(attr);
           sftp_closedir(dir);
-          return -1;
+          return FILE_COPY_FAILED;
         }
         ret = sftp_session_copy_from_remote(session, local_filepath, new_remote_path, attr->name, overwrite);
         if (ret < 0) {
@@ -640,7 +643,7 @@ enum FileStatus sftp_session_copy_on_remote(    Session *session,
   } else if (sftp_get_error(session->sftp) != SSH_FX_NO_SUCH_FILE) {
     free(buffer);
     free(dst_path);
-    return FILE_COPY_FAILED;    
+    return FILE_COPY_FAILED;
   }
   if (folder) {
     cmd = concat_three_strings_with_spaces("cp -r", src_filepath, dst_dir);

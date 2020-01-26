@@ -147,7 +147,7 @@ int init_sftp_session(Session *session);
   *   @brief Create new directory using sftp
   *   @param session Session which contains already established sftp connection
   *   @param dir_name Directory name
-  *   @return 0 on success, < 0 on error (sets corresponding error message, @see Session_message)
+  *   @return 0 on success, on error either DIR_ALREADY_EXISTS or MKDIR_FAILED
   *   @remark This is only a wrapper for libssh sftp_mkdir
   */
 enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name);
