@@ -13,6 +13,10 @@
 
 #define MESSAGE_LEN 200
 
+/**< Define misc. messages */
+#define OVERWRITE_PROMT_MSG "Do you want to overwrite files in:\n"
+
+
 /** Error messages */
 static const char* const error_strings[] =
 {
@@ -42,7 +46,9 @@ static const char* const error_strings[] =
   "Error: cannot create directory\n",
   "Error: cannot remove file\n",
   "Error: cannot remove remote directory\n",
-  "Error: cannot remove remote file\n"
+  "Error: cannot remove remote file\n",
+  "Error: unhandled file copy error\n",
+  "Error: severe thread communication error\n"
 };
 
 /** Error enums */
@@ -73,7 +79,9 @@ enum ErrorCode {
   ERROR_MK_DIR,
   ERROR_DELETE_FILE,
   ERROR_DELETE_REMOTE_DIR,
-  ERROR_DELETE_REMOTE_FILE
+  ERROR_DELETE_REMOTE_FILE,
+  ERROR_FILE_COPY_FAILED,
+  SEVERE_THREAD_COMMUNICATION_ERROR
 };
 
 /**
