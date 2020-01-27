@@ -34,9 +34,14 @@ gboolean check_asyncQueue(gpointer user_data) {
       transition_MessageWindow(INFO_ERROR, session->message);
     }
     free_WorkerMessage_t(worker_msg);
+    gtk_spinner_stop(GTK_SPINNER(mainWindow->LeftSpinner));
+    gtk_spinner_stop(GTK_SPINNER(mainWindow->RightSpinner));
     return FALSE;
   }
-  // TODO update file transfer progress here
+  if (working_on_remote) {
+    gtk_spinner_start(GTK_SPINNER(mainWindow->RightSpinner));
+  }
+  gtk_spinner_start(GTK_SPINNER(mainWindow->LeftSpinner));
   return TRUE;
 }
 
@@ -119,7 +124,9 @@ void init_MainWindow() {
   mainWindow->TopGrid = GTK_WIDGET(gtk_builder_get_object(builder, "TopGrid"));
     // left-hand side
   mainWindow->LeftTopFrame = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrame"));
+  mainWindow->LeftTopFrameBox = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrameBox"));
   mainWindow->LeftTopFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrameLabel"));
+  mainWindow->LeftSpinner = GTK_WIDGET(gtk_builder_get_object(builder, "LeftSpinner"));
   mainWindow->LeftTopFrameAlignment = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrameAlignment"));
   mainWindow->LeftInnerFrame = GTK_WIDGET(gtk_builder_get_object(builder, "LeftInnerFrame"));
   mainWindow->LeftInnerFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "LeftInnerFrameLabel"));
@@ -135,7 +142,9 @@ void init_MainWindow() {
   mainWindow->LeftNewFolderButton = GTK_WIDGET(gtk_builder_get_object(builder, "LeftNewFolderButton"));
   // right-hand side
   mainWindow->RightTopFrame = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrame"));
+  mainWindow->RightTopFrameBox = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrameBox"));
   mainWindow->RightTopFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrameLabel"));
+  mainWindow->RightSpinner = GTK_WIDGET(gtk_builder_get_object(builder, "RightSpinner"));
   mainWindow->RightTopFrameAlignment = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrameAlignment"));
   mainWindow->RightInnerFrame = GTK_WIDGET(gtk_builder_get_object(builder, "RightInnerFrame"));
   mainWindow->RightInnerFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "RightInnerFrameLabel"));

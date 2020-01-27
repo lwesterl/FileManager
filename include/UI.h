@@ -83,7 +83,9 @@ typedef struct {
     GtkWidget *TopGrid; /**< @see FileManagerUI.glade TopGrid */
       // left-hand side
       GtkWidget *LeftTopFrame;  /**< @see FileManagerUI.glade LeftTopFrame */
-        GtkWidget *LeftTopFrameLabel; /**< @see FileManagerUI.glade LeftTopFrameLabel */
+        GtkWidget *LeftTopFrameBox; /**< @see FileManagerUI.glade LeftTopFrameBox */
+          GtkWidget *LeftTopFrameLabel; /**< @see FileManagerUI.glade LeftTopFrameLabel */
+          GtkWidget *LeftSpinner; /**< @see FileManagerUI.glade LeftSpinner */
         GtkWidget *LeftTopFrameAlignment; /**< @see FileManagerUI.glade LeftTopFrameAlignment */
           GtkWidget *LeftInnerFrame;  /**< @see FileManagerUI.glade LeftInnerFrame */
             GtkWidget *LeftInnerFrameLabel; /**< @see FileManagerUI.glade LeftInnerFrameLabel */
@@ -99,7 +101,9 @@ typedef struct {
                   GtkWidget *LeftNewFolderButton; /**< @see FileManagerUI.glade LeftNewFolderButton */
       // right-hand side
       GtkWidget *RightTopFrame; /**< @see FileManagerUI.glade RightTopFrame */
-        GtkWidget *RightTopFrameLabel;  /**< @see FileManagerUI.glade RightTopFrameLabel */
+        GtkWidget *RightTopFrameBox; /**< @see FileManagerUI.glade RightTopFrameBox */
+          GtkWidget *RightTopFrameLabel;  /**< @see FileManagerUI.glade RightTopFrameLabel */
+          GtkWidget *RightSpinner; /**< @see FileManagerUI.glade RightSpinner */
         GtkWidget *RightTopFrameAlignment;  /**< @see FileManagerUI.glade RightTopFrameAlignment */
           GtkWidget *RightInnerFrame; /**< @see FileManagerUI.glade RightInnerFrame */
             GtkWidget *RightInnerFrameLabel;  /**< @see FileManagerUI.glade RightInnerFrameLabel */
