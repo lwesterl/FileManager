@@ -489,10 +489,33 @@
               </object>
             </child>
             <child type="label">
-              <object class="GtkLabel" id="LeftTopFrameLabel">
+              <object class="GtkBox" id="LeftTopFrameBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Local filesystem</property>
+                <property name="spacing">10</property>
+                <child>
+                  <object class="GtkLabel" id="LeftTopFrameLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Local filesystem</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinner" id="LeftSpinner">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
             </child>
           </object>
@@ -628,10 +651,33 @@
               </object>
             </child>
             <child type="label">
-              <object class="GtkLabel" id="RightTopFrameLabel">
+              <object class="GtkBox" id="RightTopFrameBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Remote filesystem</property>
+                <property name="spacing">10</property>
+                <child>
+                  <object class="GtkLabel" id="RightTopFrameLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Remote filesystem</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSpinner" id="RightSpinner">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
               </object>
             </child>
           </object>
