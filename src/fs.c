@@ -260,6 +260,11 @@ enum FileStatus fs_copy_dir(  const char *src,
       return FILE_COPY_FAILED;
     }
     while ((dt = readdir(dir)) != NULL) {
+      if (stop) {
+        free(new_dir);
+        closedir(dir);
+        return STOP_FILE_OPERATIONS;
+      }
       if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
         char *src_path = construct_filepath(src, dt->d_name);
         if (!src_path) {

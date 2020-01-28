@@ -37,8 +37,8 @@ enum FileStatus {
   FILE_READ_FAILED = -3, /**< File read failed */
   MKDIR_FAILED = -4, /**< mkdir operation failed */
   DIR_ALREADY_EXISTS = -5, /**< A directory already exists */
-  FILE_COPY_FAILED = -6 /**< A file copy operation failed */
-
+  FILE_COPY_FAILED = -6, /**< A file copy operation failed */
+  STOP_FILE_OPERATIONS = -7 /**< stop == 1, stop ongoing file operations */
 };
 
 /**
@@ -276,6 +276,8 @@ enum FileStatus fs_copy_file( const char *src,
   *   @return FileStatus (FILE_WRITTEN_SUCCESSFULLY = ok, FILE_ALREADY_EXISTS = you may try
   *   again with overwrite set to true, DIR_ALREADY_EXISTS = you may try again with overwrite
   *   set to true, FILE_COPY_FAILED = some severe error)
+  *   @remark This will gracefully stop and return STOP_FILE_OPERATIONS when global stop == 1
+  *   (stop is defined in @see assets.h)
   */
 enum FileStatus fs_copy_dir(  const char *src,
                               const char *dirname,

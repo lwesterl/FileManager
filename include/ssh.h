@@ -228,7 +228,9 @@ int sftp_session_remove_completely_file(Session *session, const char *filepath);
   *   @param remote_dir Target directory in the remote filesystem (parent directory)
   *   @param filename File or directory which is copied
   *   @param overwrite Whether to overwrite possible already existing remote files
-  *   @remark This is a recursive function. This should be run in another thread
+  *   @remark This is a recursive function. This should be run in another thread.
+  *   This will gracefully stop when global stop == 0, returns with STOP_FILE_OPERATIONS
+  *   (stop is defined in @see assets.h)
   *   @return 0 on success, otherwise return < 0 and matching FileStatus
   */
 enum FileStatus sftp_session_copy_to_remote(  Session *session,
@@ -244,7 +246,8 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
   *   @param remote_filepath Filepath on the remote filesystem (the actual file, not parent dir)
   *   @param filename File or directory which is copied
   *   @param overwrite Whether to overwrite possible already existing local files
-  *   @remark This is a recursive function
+  *   @remark This is a recursive function. This will return with STOP_FILE_OPERATIONS
+  *   when global stop == 1 (stop is defined in @see assets.h)
   *   @return 0 on success, otherwise return < 0 and matching FileStatus
   */
 enum FileStatus sftp_session_copy_from_remote(  Session *session,

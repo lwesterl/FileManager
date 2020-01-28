@@ -95,18 +95,16 @@ void initUI(int argc, char *argv[]) {
 }
 
 void quitUI() {
-  while (worker_running) {
-    printf("Waiting for a worker to finish\n");
-  }
-  g_async_queue_unref(asyncQueue);
-
-    // Quit gtk event loop
+  stop = 1;
+  // Quit gtk event loop
   gtk_main_quit();
+  while (worker_running);
   if (session) {
     end_session(session);
   }
 
-  g_object_unref(builder);
+  g_async_queue_unref(asyncQueue);
+  //g_object_unref(builder);
   // Free allocated memory
   clear_FileStore(remoteFileStore);
   clear_FileStore(localFileStore);

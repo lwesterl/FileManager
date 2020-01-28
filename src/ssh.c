@@ -518,6 +518,11 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
       }
       ret = 0;
       while ((dt = readdir(dir)) != NULL) {
+        if (stop) {
+          free(remote_filepath);
+          closedir(dir);
+          return STOP_FILE_OPERATIONS;
+        }
         if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
           char *new_local_path = construct_filepath(local_filepath, dt->d_name);
           if (!new_local_path) {
@@ -587,6 +592,12 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
     }
     ret = 0; // reset
     while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
+      if (stop) {
+        free(local_filepath);
+        sftp_attributes_free(attr);
+        sftp_closedir(dir);
+        return STOP_FILE_OPERATIONS;
+      }
       if ((strcmp(attr->name, ".") != 0) && (strcmp(attr->name, "..") != 0)) {
         char *new_remote_path = construct_filepath(remote_filepath, attr->name);
         if (!new_remote_path) {

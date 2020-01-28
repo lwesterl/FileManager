@@ -44,6 +44,7 @@ static const char* const IconPaths[] = {
 extern const GdkPixbuf* iconImages[2]; /**< Stores Icon images */
 extern char *local_pwd; /**< Present local working directory */
 extern char *remote_pwd; /**< Present remote working directory */
+extern volatile sig_atomic_t stop; /**< Stopping condition, set by UI */
 
 /**
   *   @brief Get Icon, image
