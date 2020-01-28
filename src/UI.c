@@ -17,7 +17,6 @@ gboolean check_asyncQueue(gpointer user_data) {
   if (data) {
     // Go through the worker return value
     WorkerMessage_t *worker_msg = (WorkerMessage_t *) data;
-    printf("worker_msg->msg: %d\n", worker_msg->msg);
     if ((worker_msg->msg == FILE_ALREADY_EXISTS) || (worker_msg->msg == DIR_ALREADY_EXISTS)) {
       // Prompt user whether to overwrite the existing files
       const char *info = OVERWRITE_PROMT_MSG;
@@ -29,19 +28,27 @@ gboolean check_asyncQueue(gpointer user_data) {
         free(msg);
         transition_MessageWindow(ASK_OVERWRITE, session->message);
       }
+    } else if (worker_msg->msg == STOP_FILE_OPERATIONS) {
+      stop = 0;
+      Session_message(session, get_error(INFO_CANCELED_OPERATION));
+      transition_MessageWindow(INFO_ERROR, session->message);
     } else if (worker_msg->msg != FILE_WRITTEN_SUCCESSFULLY) {
       Session_message(session, get_error(ERROR_FILE_COPY_FAILED));
       transition_MessageWindow(INFO_ERROR, session->message);
     }
     free_WorkerMessage_t(worker_msg);
+    gtk_widget_hide(mainWindow->LeftStopButton);
+    gtk_widget_hide(mainWindow->RightStopButton);
     gtk_spinner_stop(GTK_SPINNER(mainWindow->LeftSpinner));
     gtk_spinner_stop(GTK_SPINNER(mainWindow->RightSpinner));
     return FALSE;
   }
   if (working_on_remote) {
     gtk_spinner_start(GTK_SPINNER(mainWindow->RightSpinner));
+    gtk_widget_show(mainWindow->RightStopButton);
   }
   gtk_spinner_start(GTK_SPINNER(mainWindow->LeftSpinner));
+  gtk_widget_show(mainWindow->LeftStopButton);
   return TRUE;
 }
 
@@ -49,10 +56,8 @@ void *init_worker(void *ptr) {
   WorkerThread_t *data = (WorkerThread_t *) ptr;
   int ret;
   if (data->workType == PASTE_FILES) {
-    printf("Thread hello paste files\n");
     ret = iterate_FileCopyList(data->fileCopies, paste_file, (const void *) data->pwd, data->overwrite, data->target_remote);
     // Send a message to the main thread
-    printf("Thread, pasting completed\n");
     WorkerMessage_t *msg = malloc(sizeof(WorkerMessage_t));
     if (msg) {
       msg->msg = ret;
@@ -125,6 +130,7 @@ void init_MainWindow() {
   mainWindow->LeftTopFrameBox = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrameBox"));
   mainWindow->LeftTopFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrameLabel"));
   mainWindow->LeftSpinner = GTK_WIDGET(gtk_builder_get_object(builder, "LeftSpinner"));
+  mainWindow->LeftStopButton = GTK_WIDGET(gtk_builder_get_object(builder, "LeftStopButton"));
   mainWindow->LeftTopFrameAlignment = GTK_WIDGET(gtk_builder_get_object(builder, "LeftTopFrameAlignment"));
   mainWindow->LeftInnerFrame = GTK_WIDGET(gtk_builder_get_object(builder, "LeftInnerFrame"));
   mainWindow->LeftInnerFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "LeftInnerFrameLabel"));
@@ -143,6 +149,7 @@ void init_MainWindow() {
   mainWindow->RightTopFrameBox = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrameBox"));
   mainWindow->RightTopFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrameLabel"));
   mainWindow->RightSpinner = GTK_WIDGET(gtk_builder_get_object(builder, "RightSpinner"));
+  mainWindow->RightStopButton = GTK_WIDGET(gtk_builder_get_object(builder, "RightStopButton"));
   mainWindow->RightTopFrameAlignment = GTK_WIDGET(gtk_builder_get_object(builder, "RightTopFrameAlignment"));
   mainWindow->RightInnerFrame = GTK_WIDGET(gtk_builder_get_object(builder, "RightInnerFrame"));
   mainWindow->RightInnerFrameLabel = GTK_WIDGET(gtk_builder_get_object(builder, "RightInnerFrameLabel"));
@@ -397,6 +404,10 @@ void RightNewFolderButton_action(__attribute__((unused)) GtkButton *RightNewFold
   }
 }
 
+void StopButton_action(__attribute__((unused)) GtkButton *StopButton) {
+  stop = 1;
+}
+
 void QuitButton_action(__attribute__((unused)) GtkButton *QuitButton) {
   quitUI();
 }
@@ -626,6 +637,8 @@ int show_FileStore(const char *pwd, const bool remote) {
       gtk_icon_view_set_text_column((GtkIconView *) mainWindow->RightFileView, STRING_COLUMN);
       gtk_icon_view_set_pixbuf_column((GtkIconView *) mainWindow->RightFileView, PIXBUF_COLUMN);
       gtk_widget_show_all(mainWindow->TopWindow);
+      gtk_widget_hide(mainWindow->LeftStopButton);
+      gtk_widget_hide(mainWindow->RightStopButton);
     } else {
       Session_message(session, get_error(ERROR_DISPLAYING_REMOTE_FILES));
       transition_MessageWindow(INFO_ERROR, session->message);
@@ -637,6 +650,8 @@ int show_FileStore(const char *pwd, const bool remote) {
       gtk_icon_view_set_text_column((GtkIconView *) mainWindow->LeftFileView, STRING_COLUMN);
       gtk_icon_view_set_pixbuf_column((GtkIconView *) mainWindow->LeftFileView, PIXBUF_COLUMN);
       gtk_widget_show_all(mainWindow->TopWindow);
+      gtk_widget_hide(mainWindow->LeftStopButton);
+      gtk_widget_hide(mainWindow->RightStopButton);
     } else {
       Session_message(session, get_error(ERROR_DISPLAYING_LOCAL_FILES));
       transition_MessageWindow(INFO_ERROR, session->message);

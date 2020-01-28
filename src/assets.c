@@ -10,7 +10,7 @@
 const GdkPixbuf* iconImages[2];
 char *local_pwd = NULL;
 char *remote_pwd = NULL;
-sig_atomic_t stop = 0;
+volatile sig_atomic_t stop = 0;
 
 bool init_assets() {
   GError *error = NULL;

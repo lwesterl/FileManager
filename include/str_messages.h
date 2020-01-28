@@ -48,7 +48,8 @@ static const char* const error_strings[] =
   "Error: cannot remove remote directory\n",
   "Error: cannot remove remote file\n",
   "Error: unhandled file copy error\n",
-  "Error: severe thread communication error\n"
+  "Error: severe thread communication error\n",
+  "Info: canceled file transfer operation\n"
 };
 
 /** Error enums */
@@ -81,7 +82,8 @@ enum ErrorCode {
   ERROR_DELETE_REMOTE_DIR,
   ERROR_DELETE_REMOTE_FILE,
   ERROR_FILE_COPY_FAILED,
-  SEVERE_THREAD_COMMUNICATION_ERROR
+  SEVERE_THREAD_COMMUNICATION_ERROR,
+  INFO_CANCELED_OPERATION
 };
 
 /**

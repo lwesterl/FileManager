@@ -86,6 +86,7 @@ typedef struct {
         GtkWidget *LeftTopFrameBox; /**< @see FileManagerUI.glade LeftTopFrameBox */
           GtkWidget *LeftTopFrameLabel; /**< @see FileManagerUI.glade LeftTopFrameLabel */
           GtkWidget *LeftSpinner; /**< @see FileManagerUI.glade LeftSpinner */
+          GtkWidget *LeftStopButton; /**< @see FileManagerUI.glade LeftStopButton */
         GtkWidget *LeftTopFrameAlignment; /**< @see FileManagerUI.glade LeftTopFrameAlignment */
           GtkWidget *LeftInnerFrame;  /**< @see FileManagerUI.glade LeftInnerFrame */
             GtkWidget *LeftInnerFrameLabel; /**< @see FileManagerUI.glade LeftInnerFrameLabel */
@@ -104,6 +105,7 @@ typedef struct {
         GtkWidget *RightTopFrameBox; /**< @see FileManagerUI.glade RightTopFrameBox */
           GtkWidget *RightTopFrameLabel;  /**< @see FileManagerUI.glade RightTopFrameLabel */
           GtkWidget *RightSpinner; /**< @see FileManagerUI.glade RightSpinner */
+          GtkWidget *RightStopButton; /**< @see FileManagerUI.glade RightStopButton */
         GtkWidget *RightTopFrameAlignment;  /**< @see FileManagerUI.glade RightTopFrameAlignment */
           GtkWidget *RightInnerFrame; /**< @see FileManagerUI.glade RightInnerFrame */
             GtkWidget *RightInnerFrameLabel;  /**< @see FileManagerUI.glade RightInnerFrameLabel */
@@ -439,6 +441,12 @@ void RightFileBackButton_action(GtkButton *RightFileBackButton);
   *   to create folder operation emitted through ContextMenu
   */
 void RightNewFolderButton_action(GtkButton *RightNewFolderButton);
+
+/**
+  *   @brief Stop current file operation (stop worker thread)
+  *   @param StopButton Either LeftStopButton or RightStopButton, not used
+  */
+void StopButton_action(GtkButton *StopButton);
 
 /**
   *   @brief Quit from the ConnectWindow
