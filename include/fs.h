@@ -214,6 +214,8 @@ enum FileStatus fs_mkdir(const char *dir_name);
   *   @param dir_name Path to the directory to be removed
   *   @param recursive Whether to remove the dir recursively, or only an empty dir
   *   @return 0 on success, < 0 on error
+  *   @remark This will stop and return STOP_FILE_OPERATIONS when global stop == 1
+  *   (stop is defined in @see assets.h)
   */
 enum FileStatus fs_rmdir(const char *dir_name, const bool recursive);
 

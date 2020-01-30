@@ -91,7 +91,10 @@ enum FileStatus fs_rmdir(const char *dir_name, const bool recursive) {
       int ret;
       while ((dt = readdir(dir)) != NULL) {
         if ((strcmp(dt->d_name, ".") != 0) && (strcmp(dt->d_name, "..") != 0)) {
-
+          if (stop) {
+            closedir(dir);
+            return STOP_FILE_OPERATIONS;
+          }
           char *filepath = construct_filepath(dir_name, dt->d_name);
           if (!filepath) {
             closedir(dir);
