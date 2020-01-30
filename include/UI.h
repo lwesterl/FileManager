@@ -214,8 +214,7 @@ enum {
 
 enum WorkerType {
   PASTE_FILES, /**< Paste copied files */
-  DELETE_LOCAL, /**< Delete local files */
-  DELETE_REMOTE /**< Delete remote files */
+  DELETE_FILES, /**< Delete files */
 };
 
 /**
@@ -223,7 +222,7 @@ enum WorkerType {
   *   @brief Data passed to worker threads
   *   @details Depending on the work type only some values are used, non-used
   *   values are set to NULL or 0. (for PASTE_FILES filepath==NULL and for
-  *   DELETE_LOCAL and DELETE_REMOTE only filepath is not NULL, overwrite==0)
+  *   DELETE_FILES fileCopies==NULL, overwrite==0)
   */
 typedef struct {
   char *pwd; /**< Present working directory passed for the worker thread */
@@ -563,6 +562,15 @@ void rename_file();
   *   this function
   */
 void create_folder();
+
+/**
+  *   @brief Delete file or directory in another thread
+  *   @param finalize true -> permanently delete files, false -> show promt
+  *   whether to permanently delete files (this does not start a new thread)
+  *   @remark FileView (mainWindow->contextMenu->ContextMenuEmitter) must have
+  *   exactly one element selected prior entering this function
+  */
+void delete_file_threaded(bool finalize);
 
 /**
   *   @brief Delete file or directory

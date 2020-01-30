@@ -33,7 +33,11 @@ gboolean check_asyncQueue(gpointer user_data) {
       Session_message(session, get_error(INFO_CANCELED_OPERATION));
       transition_MessageWindow(INFO_ERROR, session->message);
     } else if (worker_msg->msg != FILE_WRITTEN_SUCCESSFULLY) {
-      Session_message(session, get_error(ERROR_FILE_COPY_FAILED));
+      if (worker_msg->workType == PASTE_FILES) {
+        Session_message(session, get_error(ERROR_FILE_COPY_FAILED));
+      } else {
+        Session_message(session, get_error(ERROR_DELETE_FILE));
+      }
       transition_MessageWindow(INFO_ERROR, session->message);
     }
     free_WorkerMessage_t(worker_msg);
@@ -41,6 +45,8 @@ gboolean check_asyncQueue(gpointer user_data) {
     gtk_widget_hide(mainWindow->RightStopButton);
     gtk_spinner_stop(GTK_SPINNER(mainWindow->LeftSpinner));
     gtk_spinner_stop(GTK_SPINNER(mainWindow->RightSpinner));
+    show_FileStore(local_pwd, false);
+    show_FileStore(remote_pwd, true);
     return FALSE;
   }
   if (working_on_remote) {
@@ -57,16 +63,22 @@ void *init_worker(void *ptr) {
   int ret;
   if (data->workType == PASTE_FILES) {
     ret = iterate_FileCopyList(data->fileCopies, paste_file, (const void *) data->pwd, data->overwrite, data->target_remote);
-    // Send a message to the main thread
-    WorkerMessage_t *msg = malloc(sizeof(WorkerMessage_t));
-    if (msg) {
-      msg->msg = ret;
-      msg->workType = data->workType;
-      msg->pwd = malloc(strlen(data->pwd) + 1);
-      if (msg->pwd) strcpy(msg->pwd, data->pwd);
+  } else {
+    if (data->target_remote) {
+      ret = sftp_session_remove_completely_file(session, data->filepath);
+    } else {
+      ret = remove_completely(data->filepath);
     }
-    g_async_queue_push(asyncQueue, msg);
   }
+  // Send a message to the main thread
+  WorkerMessage_t *msg = malloc(sizeof(WorkerMessage_t));
+  if (msg) {
+    msg->msg = ret;
+    msg->workType = data->workType;
+    msg->pwd = malloc(strlen(data->pwd) + 1);
+    if (msg->pwd) strcpy(msg->pwd, data->pwd);
+  }
+  g_async_queue_push(asyncQueue, msg);
   free_WorkerThread_t(data);
   worker_running = 0;
   pthread_exit(NULL);
@@ -474,7 +486,7 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
   } else if (messageWindow->messageType == ASK_DELETE) {
     // User wants to permanently remove a file
     close_MessageWindow();
-    delete_file(true);
+    delete_file_threaded(true);
   } else if (messageWindow->messageType == ASK_OVERWRITE) {
     close_MessageWindow();
     paste_files_threaded(true);
@@ -535,7 +547,7 @@ void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpoin
   } else if (menuItem == mainWindow->contextMenu->create_folder) {
     create_folder();
   } else {
-    delete_file(false);
+    delete_file_threaded(false);
   }
 }
 
@@ -707,7 +719,54 @@ void create_folder() {
   gtk_widget_show_all(popOverDialog->PopOverDialog);
 }
 
-// TODO add this to another thread
+void delete_file_threaded(bool finalize) {
+  gchar *filename = get_selected_filename();
+  WorkerThread_t *worker_data = NULL;
+  if (finalize) {
+     worker_data = malloc(sizeof(WorkerThread_t));
+    if (!worker_data) goto error;
+    const char *pwd;
+    if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
+      worker_data->target_remote = false;
+      pwd = local_pwd;
+    } else {
+      worker_data->target_remote = true;
+      pwd = remote_pwd;
+    }
+    char *path = construct_filepath(pwd, filename);
+    if (!path) goto error;
+    worker_data->pwd = malloc(strlen(pwd) + 1);
+    if (!worker_data->pwd) goto error;
+    strcpy(worker_data->pwd, pwd);
+    worker_data->filepath = path;
+    worker_data->workType = DELETE_FILES;
+    worker_data->fileCopies = NULL;
+    worker_data->overwrite = false;
+    // Create new worker thread
+    if (pthread_create(&tid, &tattr, init_worker, (void *) worker_data) != 0) goto error;
+    g_idle_add ((GSourceFunc) check_asyncQueue, asyncQueue);
+    worker_running = 1;
+    working_on_remote = worker_data->target_remote;
+    return;
+  } else {
+    // Just show a promt whether to delete files
+    const char *promt = "Are you sure?\nOperation will permanently erase contents of:\n";
+    char *msg = malloc(strlen(promt) + strlen((const char *) filename) + 1);
+    strcpy(msg, promt);
+    strcat(msg, (const char *) filename);
+    Session_message(session, msg);
+    free(msg);
+    transition_MessageWindow(ASK_DELETE, session->message);
+    g_free(filename);
+    return;
+  }
+  error:
+    if (worker_data) free_WorkerThread_t(worker_data);
+    g_free(filename);
+    Session_message(session, get_error(ERROR_FILE_DELETE_FAILED));
+    transition_MessageWindow(INFO_ERROR, session->message);
+}
+
 void delete_file(bool finalize) {
   gchar *filename = get_selected_filename();
   if (finalize) {
