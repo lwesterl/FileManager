@@ -423,50 +423,55 @@ enum FileStatus sftp_session_rename_file(Session *session, const char *path, con
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-int sftp_session_rmdir(Session *session, const char *dir_name, bool recursive) {
+enum FileStatus sftp_session_rmdir(Session *session, const char *dir_name, bool recursive) {
   sftp_dir dir;
   sftp_attributes attr;
   int ret;
 
   if (recursive) {
     dir = sftp_opendir(session->sftp, dir_name);
-    if (!dir) return -1;
+    if (!dir) return FILE_REMOVE_FAILED;
 
     while ((attr = sftp_readdir(session->sftp, dir)) != NULL) {
       if ((strcmp(attr->name, ".") != 0) && (strcmp(attr->name, "..") != 0)) {
-
+        if (stop) {
+          sftp_attributes_free(attr);
+          sftp_closedir(dir);
+          return STOP_FILE_OPERATIONS;
+        }
         char *filepath = construct_filepath(dir_name, attr->name);
         if (!filepath) {
           sftp_attributes_free(attr);
           sftp_closedir(dir);
-          return -1;
+          return FILE_REMOVE_FAILED;
         }
 
         if (is_folder(attr->type)) {
           ret = sftp_session_rmdir(session, filepath, true);
         } else {
-          ret = sftp_unlink(session->sftp, filepath);
+          if (sftp_unlink(session->sftp, filepath) != 0) ret = FILE_REMOVE_FAILED;
+          else ret = 0;
         }
         if (ret < 0) {
           sftp_attributes_free(attr);
           sftp_closedir(dir);
-          return -1;
+          return ret;
         }
       }
       sftp_attributes_free(attr);
     }
 
-    if (!sftp_dir_eof(dir)) return -1;
+    if (!sftp_dir_eof(dir)) return FILE_REMOVE_FAILED;
     sftp_closedir(dir);
 
   }
   return sftp_rmdir(session->sftp, dir_name);
 }
 
-int sftp_session_remove_completely_file(Session *session, const char *filepath) {
+enum FileStatus sftp_session_remove_completely_file(Session *session, const char *filepath) {
   sftp_attributes attr;
   attr = sftp_stat(session->sftp, filepath);
-  int ret = -1;
+  int ret = FILE_REMOVE_FAILED;
   if (attr) {
     if (is_folder(attr->type)) {
       sftp_attributes_free(attr);
@@ -477,6 +482,7 @@ int sftp_session_remove_completely_file(Session *session, const char *filepath) 
       sftp_attributes_free(attr);
       if ((ret = sftp_unlink(session->sftp, filepath)) != 0) {
         Session_message(session, get_error(ERROR_DELETE_REMOTE_FILE));
+        ret = FILE_REMOVE_FAILED;
       }
     }
   } else {

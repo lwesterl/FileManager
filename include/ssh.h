@@ -207,9 +207,9 @@ enum FileStatus sftp_session_rename_file(Session *session, const char *path, con
   *   @param session Session struct which contains already established sftp session
   *   @param dir_name Name of the directory to be removed
   *   @param recursive Whether to remove an empty directory or all the contents
-  *   @return 0 on success, -1 on error
+  *   @return 0 on success, < 0 on error
   */
-int sftp_session_rmdir(Session *session, const char *dir_name, bool recursive);
+enum FileStatus sftp_session_rmdir(Session *session, const char *dir_name, bool recursive);
 
 /**
   *   @brief Remove filepath completely (works for both files and directories)
@@ -217,9 +217,9 @@ int sftp_session_rmdir(Session *session, const char *dir_name, bool recursive);
   *   erase the whole directory. For files this will call sftp_unlink
   *   @param session Session struct which contains already established sftp session
   *   @param filepath To be removed
-  *   @return 0 on success, -1 on error (sets corresponding error message, @see Session_message)
+  *   @return 0 on success, < 0 on error (sets corresponding error message, @see Session_message)
   */
-int sftp_session_remove_completely_file(Session *session, const char *filepath);
+enum FileStatus sftp_session_remove_completely_file(Session *session, const char *filepath);
 
 /**
   *   @brief Paste file from local filesystem to remote
