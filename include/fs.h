@@ -38,7 +38,8 @@ enum FileStatus {
   MKDIR_FAILED = -4, /**< mkdir operation failed */
   DIR_ALREADY_EXISTS = -5, /**< A directory already exists */
   FILE_COPY_FAILED = -6, /**< A file copy operation failed */
-  STOP_FILE_OPERATIONS = -7 /**< stop == 1, stop ongoing file operations */
+  STOP_FILE_OPERATIONS = -7, /**< stop == 1, stop ongoing file operations */
+  FILE_REMOVE_FAILED = -8 /**< A file removal failed */
 };
 
 /**
@@ -214,7 +215,7 @@ enum FileStatus fs_mkdir(const char *dir_name);
   *   @param recursive Whether to remove the dir recursively, or only an empty dir
   *   @return 0 on success, < 0 on error
   */
-int fs_rmdir(const char *dir_name, const bool recursive);
+enum FileStatus fs_rmdir(const char *dir_name, const bool recursive);
 
 /**
   *   @brief List directory content to linked list of struct File
@@ -246,9 +247,9 @@ enum FileStatus fs_rename(const char *old_name, const char *new_name);
   *   @details For directories this will call fs_rmdir to recursively erase the
   *   whole directory. For files this will call unlink
   *   @param filepath To be removed, can be file or directory
-  *   @return 0 on success, -1 on error
+  *   @return 0 on success, < 0 on error
   */
-int remove_completely(const char *filepath);
+enum FileStatus remove_completely(const char *filepath);
 
 /**
   *   @brief Copy a single file from source to destination on local filesystem

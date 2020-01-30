@@ -79,14 +79,14 @@ enum FileStatus fs_mkdir(const char *dir_name) {
   return FILE_WRITTEN_SUCCESSFULLY;
 }
 
-int fs_rmdir(const char *dir_name, const bool recursive) {
+enum FileStatus fs_rmdir(const char *dir_name, const bool recursive) {
   if (recursive) {
       DIR *dir = NULL;
       struct dirent *dt = NULL;
 
       dir = opendir(dir_name);
       if (!dir) {
-        return -1;
+        return FILE_REMOVE_FAILED;
       }
       int ret;
       while ((dt = readdir(dir)) != NULL) {
@@ -95,7 +95,7 @@ int fs_rmdir(const char *dir_name, const bool recursive) {
           char *filepath = construct_filepath(dir_name, dt->d_name);
           if (!filepath) {
             closedir(dir);
-            return -1;
+            return FILE_REMOVE_FAILED;
           }
 
           if (is_folder(dt->d_type)) {
@@ -107,7 +107,7 @@ int fs_rmdir(const char *dir_name, const bool recursive) {
           free(filepath);
           if (ret < 0) {
             closedir(dir);
-            return ret; // Some error, return immediately
+            return FILE_REMOVE_FAILED; // Some error, return immediately
           }
         }
       }
@@ -186,16 +186,16 @@ enum FileStatus fs_rename(const char *old_name, const char *new_name) {
   return FILE_WRITE_FAILED;
 }
 
-int remove_completely(const char *filepath) {
+enum FileStatus remove_completely(const char *filepath) {
   struct stat st;
   if (stat(filepath, &st) == 0) {
     if (st.st_mode & S_IFDIR) {
       return fs_rmdir(filepath, true);
     } else {
-      return unlink(filepath);
+      if (unlink(filepath) == 0) return FILE_WRITTEN_SUCCESSFULLY;
     }
   }
-  return -1; // stat error
+  return FILE_REMOVE_FAILED; // stat error
 }
 
 enum FileStatus fs_copy_file( const char *src,
