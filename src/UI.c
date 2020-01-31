@@ -606,18 +606,55 @@ gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((
   if ((event->keyval == GDK_KEY_c || event->keyval == GDK_KEY_C) && ( event->state & GDK_CONTROL_MASK)) {
     mainWindow->contextMenu->ContextMenuEmitter = widget;
     copy_files();
-  } else if ((event->keyval == GDK_KEY_v || event->keyval == GDK_KEY_V) && ( event->state & GDK_CONTROL_MASK)) {
+  }
+  else if ((event->keyval == GDK_KEY_v || event->keyval == GDK_KEY_V) && ( event->state & GDK_CONTROL_MASK)) {
     mainWindow->contextMenu->ContextMenuEmitter = widget;
-    if (get_selected_filename() == NULL) {
+    char *filename = get_selected_filename();
+    if (filename == NULL) {
       paste_files_threaded(false);
-    }
-  } else if ((event->keyval == GDK_KEY_Delete)) {
+    } else free(filename);
+  }
+  else if ((event->keyval == GDK_KEY_Delete)) {
     mainWindow->contextMenu->ContextMenuEmitter = widget;
     delete_file_threaded(false);
-  } else if ((event->keyval == GDK_KEY_n || event->keyval == GDK_KEY_N) && (event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)) {
+  }
+  else if ((event->keyval == GDK_KEY_n || event->keyval == GDK_KEY_N) && (event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)) {
     if (widget == mainWindow->LeftFileView) LeftNewFolderButton_action(NULL);
     else RightNewFolderButton_action(NULL);
   }
+  else if (event->keyval == GDK_KEY_Return) {
+    mainWindow->contextMenu->ContextMenuEmitter = widget;
+    char *filename = get_selected_filename();
+    if (filename) {
+        if (widget == mainWindow->LeftFileView) {
+          if (fs_is_filename_folder(filename, local_pwd)) {
+            local_pwd = cd_enter_pwd(local_pwd, filename);
+            update_FileView(false);
+          }
+        } else if (!worker_running) {
+          if (sftp_session_is_filename_folder(session, filename, remote_pwd)) {
+            remote_pwd = cd_enter_pwd(remote_pwd, filename);
+            update_FileView(true);
+          }
+        }
+        free(filename);
+      }
+    }
+    else if (event->keyval == GDK_KEY_BackSpace) {
+      if (widget == mainWindow->LeftFileView) {
+        LeftFileBackButton_action(NULL);
+      } else {
+        RightFileBackButton_action(NULL);
+      }
+    }
+    else if (event->keyval == GDK_KEY_Home) {
+      if (widget == mainWindow->LeftFileView) {
+        LeftFileHomeButton_action(NULL);
+      } else {
+        RightFileHomeButton_action(NULL);
+      }
+      return TRUE;
+    }
   return FALSE;
 }
 

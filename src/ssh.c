@@ -285,6 +285,7 @@ bool sftp_session_is_filename_folder(Session *session, const char *filename, con
     attr = sftp_stat(session->sftp, filepath);
     if (attr) {
       ret = is_folder(attr->type);
+      sftp_attributes_free(attr);
     }
     free(filepath);
   }
