@@ -15,6 +15,8 @@ gboolean check_asyncQueue(gpointer user_data) {
   gpointer data;
   data = g_async_queue_try_pop((GAsyncQueue *) user_data);
   if (data) {
+    pthread_join(tid, NULL);
+    worker_running = 0;
     // Go through the worker return value
     WorkerMessage_t *worker_msg = (WorkerMessage_t *) data;
     if ((worker_msg->msg == FILE_ALREADY_EXISTS) || (worker_msg->msg == DIR_ALREADY_EXISTS)) {
@@ -78,9 +80,8 @@ void *init_worker(void *ptr) {
     msg->pwd = malloc(strlen(data->pwd) + 1);
     if (msg->pwd) strcpy(msg->pwd, data->pwd);
   }
-  g_async_queue_push(asyncQueue, msg);
   free_WorkerThread_t(data);
-  worker_running = 0;
+  g_async_queue_push(asyncQueue, msg);
   pthread_exit(NULL);
 }
 
@@ -94,7 +95,6 @@ void initUI(int argc, char *argv[]) {
   worker_running = 0;
   working_on_remote = 0;
   pthread_attr_init(&tattr);
-  pthread_attr_setdetachstate(&tattr, PTHREAD_CREATE_DETACHED);
 
   builder = gtk_builder_new_from_file(LAYOUT_PATH);
 
@@ -180,6 +180,10 @@ void init_MainWindow() {
   g_signal_connect(mainWindow->TopWindow, "destroy", G_CALLBACK(quitUI), NULL);
   g_signal_connect_swapped(mainWindow->LeftFileView, "button_press_event", G_CALLBACK(transition_ContextMenu), mainWindow->LeftFileView);
   g_signal_connect_swapped(mainWindow->RightFileView, "button_press_event", G_CALLBACK(transition_ContextMenu), mainWindow->RightFileView);
+  gtk_widget_add_events(mainWindow->LeftFileView, GDK_KEY_PRESS_MASK);
+  gtk_widget_add_events(mainWindow->RightFileView, GDK_KEY_PRESS_MASK);
+  g_signal_connect(G_OBJECT(mainWindow->LeftFileView), "key_press_event", G_CALLBACK(keypress_handler), NULL);
+  g_signal_connect(G_OBJECT(mainWindow->RightFileView), "key_press_event", G_CALLBACK(keypress_handler), NULL);
 }
 
 void init_ContextMenu() {
@@ -598,6 +602,19 @@ void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDial
   close_PopOverDialog();
 }
 
+gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((unused)) gpointer data) {
+  if ((event->keyval == GDK_KEY_c || event->keyval == GDK_KEY_C) && ( event->state & GDK_CONTROL_MASK)) {
+    mainWindow->contextMenu->ContextMenuEmitter = widget;
+    copy_files();
+  } else if ((event->keyval == GDK_KEY_v || event->keyval == GDK_KEY_V) && ( event->state & GDK_CONTROL_MASK)) {
+    mainWindow->contextMenu->ContextMenuEmitter = widget;
+    if (get_selected_filename() == NULL) {
+      paste_files_threaded(false);
+    }
+  }
+  return FALSE;
+}
+
 
 /*  File handling */
 
@@ -723,6 +740,10 @@ void delete_file_threaded(bool finalize) {
   gchar *filename = get_selected_filename();
   WorkerThread_t *worker_data = NULL;
   if (finalize) {
+    if (worker_running) {
+      g_free(filename);
+      return;
+    }
      worker_data = malloc(sizeof(WorkerThread_t));
     if (!worker_data) goto error;
     const char *pwd;
@@ -802,6 +823,7 @@ void delete_file(bool finalize) {
 
 // Currently works only for a single file
 void copy_files() {
+  if (worker_running) return;
   char *filepath;
   bool remote = false;
   if (fileCopies) {
@@ -809,6 +831,7 @@ void copy_files() {
     fileCopies = NULL;
   }
   gchar *filename = get_selected_filename();
+  if (!filename) return;
   if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
     filepath = construct_filepath(local_pwd, (const char *) filename);
   } else {
@@ -831,6 +854,7 @@ void copy_files() {
 }
 
 void paste_files_threaded(const bool overwrite) {
+  if (worker_running) return;
   WorkerThread_t *worker_data = NULL;
   const char *pwd;
   if (fileCopies) {
@@ -915,7 +939,7 @@ int paste_file( const FileCopy_t *fileCopy,
         working_on_remote = 0;
         ret = fs_copy_files(fileCopy->filepath, fileCopy->filename, dir, true, overwrite);
       }
-      show_FileStore(pwd, false);
+      //show_FileStore(pwd, false);
     } else {
       if (fileCopy->remote) {
         // From remote to remote
@@ -924,7 +948,7 @@ int paste_file( const FileCopy_t *fileCopy,
         // From local to remote
         ret = sftp_session_copy_to_remote(session, fileCopy->filepath, dir, fileCopy->filename, overwrite);
       }
-      show_FileStore(pwd, true);
+      //show_FileStore(pwd, true);
     }
     return ret;
   }
@@ -932,8 +956,9 @@ int paste_file( const FileCopy_t *fileCopy,
 }
 
 gchar *get_selected_filename() {
-  gchar *filename;
+  gchar *filename = NULL;
   GList *selected = gtk_icon_view_get_selected_items(GTK_ICON_VIEW(mainWindow->contextMenu->ContextMenuEmitter));
+  if (!selected) return NULL;
   if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
     gtk_tree_model_get_iter(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), selected->data);
     gtk_tree_model_get(GTK_TREE_MODEL(localFileStore->listStore), &(localFileStore->it), STRING_COLUMN, &filename, -1);

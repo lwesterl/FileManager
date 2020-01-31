@@ -506,6 +506,16 @@ void PopOverDialogCancelButton_action(GtkButton *PopOverDialogCancelButton);
   */
 void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
 
+/**
+  *   @brief Handler for mainWindow keypress events
+  *   @param widget Widget which created the event, must be either LeftFileView
+  *   or RightFileView
+  *   @param event Keypress event
+  *   @param data Additional data pointer, unused
+  *   @param return FALSE to further process the key press
+  */
+gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
+
 
 /*  File handling */
 
