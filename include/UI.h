@@ -41,6 +41,7 @@ typedef struct {
   GtkMenuItem *rename; /**< GtkMenuItem triggers file rename operation */
   GtkMenuItem *create_folder; /**< GtkMenuItem triggers create folder operation */
   GtkMenuItem *delete; /**< GtkMenuItem triggers recursive file/directory removal */
+  GtkMenuItem *show_hidden_files; /**< GtkMenuItem to show/hide hidden files */
 } ContextMenu;
 
 /**
@@ -52,7 +53,8 @@ enum ContextMenuActions {
   PASTE, /**< Paste selected files */
   RENAME, /**< Rename selected files */
   CREATE_FOLDER, /**< Create new folder */
-  DELETE /**< Delete file/directory */
+  DELETE, /**< Delete file/directory */
+  SHOW_HIDDEN_FILES /**< Show hidden files */
 };
 
 /**< String names for ContextMenuActions */
@@ -62,7 +64,8 @@ static const char* const ContextMenuAction_names[] =
   "Paste",
   "Rename",
   "Create new folder",
-  "Delete"
+  "Delete",
+  "Show hidden files"
 };
 
 /**
@@ -280,6 +283,7 @@ GSList *fileCopies; /**< GSList which stores FileCopy structs for files selected
 GAsyncQueue *asyncQueue; /**< Queue used for cross-thread communication, only main thread should listen for incoming messages */
 volatile sig_atomic_t worker_running; /**< Whether a worker is running */
 volatile sig_atomic_t working_on_remote; /**< Whether the worker is working on remote filesystem */
+bool show_hidden_files; /**< Whether to show hidden files or not */
 
 
 /* Queue (Worker thread) handling */
@@ -516,6 +520,12 @@ void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
   *   event propagation
   */
 gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
+
+/**
+  *   @brief Toggle hidden files either shown or hidden
+  *   @param ptr Additional pointer not used
+  */
+void toggle_HiddenFiles(gpointer ptr);
 
 
 /*  File handling */

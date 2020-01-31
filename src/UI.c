@@ -94,6 +94,7 @@ void initUI(int argc, char *argv[]) {
   fileCopies = NULL;
   worker_running = 0;
   working_on_remote = 0;
+  show_hidden_files = false;
   pthread_attr_init(&tattr);
 
   builder = gtk_builder_new_from_file(LAYOUT_PATH);
@@ -207,6 +208,9 @@ void init_ContextMenu() {
   mainWindow->contextMenu->delete = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(DELETE));
   g_signal_connect(mainWindow->contextMenu->delete, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->delete);
   gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->delete, 0, 1, 4, 5);
+  mainWindow->contextMenu->show_hidden_files = (GtkMenuItem *) gtk_check_menu_item_new_with_label(get_ContextMenuAction_name(SHOW_HIDDEN_FILES));
+  g_signal_connect((GtkCheckMenuItem *) mainWindow->contextMenu->show_hidden_files, "toggled", G_CALLBACK(toggle_HiddenFiles), NULL);
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->show_hidden_files, 0, 1, 5, 6);
 }
 
 void init_ConnectWindow() {
@@ -373,6 +377,7 @@ void show_ContextMenu_buttons(bool file_selected) {
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->rename), selected && !worker_running);
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->create_folder), !selected && !worker_running);
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->delete), selected && !worker_running);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->show_hidden_files), !worker_running);
 }
 
 
@@ -655,9 +660,24 @@ gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((
       }
       return TRUE;
     }
+    else if ((!worker_running) && (event->keyval == GDK_KEY_h || event->keyval == GDK_KEY_H) && (event->state & GDK_CONTROL_MASK)) {
+      // This needs to be done twice to correctly activate the button, WHY?
+      for (int i = 0; i < 2; i++) {
+        gtk_check_menu_item_toggled((GtkCheckMenuItem *) mainWindow->contextMenu->show_hidden_files);
+        gtk_check_menu_item_set_active((GtkCheckMenuItem *) mainWindow->contextMenu->show_hidden_files, show_hidden_files);
+        gtk_widget_show((GtkWidget *) mainWindow->contextMenu->show_hidden_files);
+      }
+    }
   return FALSE;
 }
 
+void toggle_HiddenFiles(__attribute__((unused)) gpointer ptr) {
+  if (!worker_running) {
+    show_hidden_files = !show_hidden_files;
+    show_FileStore(local_pwd, false);
+    show_FileStore(remote_pwd, true);
+  }
+}
 
 /*  File handling */
 
@@ -685,12 +705,14 @@ FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool rem
 void add_FileStore(struct File *file, void *ptr) {
     FileStore *fileStore = (FileStore *) ptr;
     if ((strcmp(file->name, ".") != 0) && (strcmp(file->name, "..") != 0)) {
-      gtk_list_store_append(fileStore->listStore, &(fileStore->it));
-      gtk_list_store_set( fileStore->listStore, &(fileStore->it),
-                          STRING_COLUMN, (GValue *) file->name,
-                          PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
-                          UINT_COLUMN, file->type,
-                          -1);
+      if (show_hidden_files || (file->name[0] != '.')) {
+        gtk_list_store_append(fileStore->listStore, &(fileStore->it));
+        gtk_list_store_set( fileStore->listStore, &(fileStore->it),
+                            STRING_COLUMN, (GValue *) file->name,
+                            PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
+                            UINT_COLUMN, file->type,
+                            -1);
+      }
     }
 }
 
