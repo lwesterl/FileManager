@@ -611,6 +611,12 @@ gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((
     if (get_selected_filename() == NULL) {
       paste_files_threaded(false);
     }
+  } else if ((event->keyval == GDK_KEY_Delete)) {
+    mainWindow->contextMenu->ContextMenuEmitter = widget;
+    delete_file_threaded(false);
+  } else if ((event->keyval == GDK_KEY_n || event->keyval == GDK_KEY_N) && (event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)) {
+    if (widget == mainWindow->LeftFileView) LeftNewFolderButton_action(NULL);
+    else RightNewFolderButton_action(NULL);
   }
   return FALSE;
 }
@@ -738,6 +744,7 @@ void create_folder() {
 
 void delete_file_threaded(bool finalize) {
   gchar *filename = get_selected_filename();
+  if (!filename) return;
   WorkerThread_t *worker_data = NULL;
   if (finalize) {
     if (worker_running) {
