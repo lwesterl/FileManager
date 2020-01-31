@@ -144,6 +144,15 @@ int get_remote_home_dir(Session *session);
 int init_sftp_session(Session *session);
 
 /**
+  *   @brief Check whether a filename leads to a folder
+  *   @param session Session struct with already established sftp session
+  *   @param filename Name of the file in the pwd
+  *   @param pwd Present working directory
+  *   @return true if filename is a folder, otherwise false
+  */
+bool sftp_session_is_filename_folder(Session *session, const char *filename, const char *pwd);
+
+/**
   *   @brief Create new directory using sftp
   *   @param session Session which contains already established sftp connection
   *   @param dir_name Directory name

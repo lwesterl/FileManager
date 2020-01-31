@@ -277,6 +277,20 @@ int init_sftp_session(Session *session) {
   return 0;
 }
 
+bool sftp_session_is_filename_folder(Session *session, const char *filename, const char *pwd) {
+  sftp_attributes attr;
+  bool ret = false;
+  char *filepath = construct_filepath(pwd, filename);
+  if (filepath) {
+    attr = sftp_stat(session->sftp, filepath);
+    if (attr) {
+      ret = is_folder(attr->type);
+    }
+    free(filepath);
+  }
+  return ret;
+}
+
 enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name) {
   int permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
   if (sftp_mkdir(session->sftp, dir_name, permissions) != SSH_OK) {

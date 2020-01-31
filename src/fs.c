@@ -69,6 +69,19 @@ bool file_exists(const char *filename) {
   return (stat (filename, &st) == 0);
 }
 
+bool fs_is_filename_folder(const char *filename, const char *pwd) {
+  struct stat st = {0};
+  bool ret = false;
+  char *filepath = construct_filepath(pwd, filename);
+  if (filepath) {
+    if (stat(filepath, &st) == 0) {
+      ret = S_ISDIR(st.st_mode);
+    }
+    free(filepath);
+  }
+  return ret;
+}
+
 enum FileStatus fs_mkdir(const char *dir_name) {
   int permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
   if (!file_exists(dir_name)) {
