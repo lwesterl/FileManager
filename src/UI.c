@@ -403,11 +403,23 @@ void transition_FilePropertiesDialog() {
     const char *parent_folder = mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView ? local_pwd : remote_pwd;
     const GSList *item = g_slist_find_custom(files, filename, compare_File_GSLists);
     if (item) {
-      const File_t *file = (const File_t *) item;
-      printf("size: %ld\n", file->size);
-      printf("mtime: %ld\n", file->mtime);
+      const File_t *file = (const File_t *) item->data;
+      char *local_time = seconds_to_time(file->mtime);
+      char *size = get_size_str(file->size);
+      char *permissions = get_file_permissions_str(file->permissions);
       gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesFilename), filename);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesType), is_folder(file->type) ? "Folder" : "File");
       gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesParentFolder), parent_folder);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesFileSize), size);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesLastModified), local_time);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesOwner), file->owner);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesOwnerPermissions), get_permission_description(permissions, USER_PERMISSIONS));
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesGroup), file->group);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesGroupPermissions), get_permission_description(permissions, GROUP_PERMISSIONS));
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesOthersPermissions), get_permission_description(permissions, OTHERS_PERMISSIONS));
+      free(local_time);
+      free(size);
+      free(permissions);
       gtk_widget_show_all(filePropertiesDialog->FilePropertiesDialog);
     }
     free(filename);
@@ -714,6 +726,10 @@ gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((
         gtk_check_menu_item_set_active((GtkCheckMenuItem *) mainWindow->contextMenu->show_hidden_files, show_hidden_files);
         gtk_widget_show((GtkWidget *) mainWindow->contextMenu->show_hidden_files);
       }
+    }
+    else if ((event->keyval == GDK_KEY_i || event->keyval == GDK_KEY_I) && (event->state & GDK_CONTROL_MASK)) {
+      mainWindow->contextMenu->ContextMenuEmitter = widget;
+      transition_FilePropertiesDialog();
     }
   return FALSE;
 }
