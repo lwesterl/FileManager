@@ -116,3 +116,59 @@ char *concat_three_strings_with_spaces(const char *str1, const char *str2, const
   }
   return str;
 }
+
+char *seconds_to_time(uint64_t s) {
+  const size_t len = 80;
+  char *time = malloc(len);
+  struct tm lt;
+  time_t t = (time_t) s;
+  localtime_r(&t, &lt);
+  strftime(time, len, "%c", &lt);
+  return time;
+}
+
+char *get_size_str(uint64_t bytes) {
+  const int len = 30; //  This should be enough
+  char *size = malloc(len);
+  if (size) {
+    snprintf(size, len, "%ld bytes", bytes);
+  }
+  return size;
+}
+
+char *get_file_permissions_str(uint32_t permissions) {
+  char *str = malloc(10);
+  if (str) {
+    str[0] = permissions & S_IRUSR ? 'r' : '-';
+    str[1] = permissions & S_IWUSR ? 'w' : '-';
+    str[2] = permissions & S_IXUSR ? 'x' : '-';
+    str[3] = permissions & S_IRGRP ? 'r' : '-';
+    str[4] = permissions & S_IWGRP ? 'w' : '-';
+    str[5] = permissions & S_IXGRP ? 'x' : '-';
+    str[6] = permissions & S_IROTH ? 'r' : '-';
+    str[7] = permissions & S_IWOTH ? 'w' : '-';
+    str[8] = permissions & S_IXOTH ? 'x' : '-';
+    str[9] = '\0';
+  }
+  return str;
+}
+
+const char *get_permission_description(const char *perm, enum PermissionType type) {
+  if (perm) {
+    if (perm[type] == 'r') {
+      if (perm[type + 1] == 'w') {
+        if (perm[type + 2] == 'x') return get_FilePermissionStr(READ_WRITE_EXECUTE);
+        return get_FilePermissionStr(READ_WRITE);
+      } else {
+        if (perm[type + 2] == 'x') return get_FilePermissionStr(READ_EXECUTE);
+        return get_FilePermissionStr(READ);
+      }
+    }
+    if (perm[type + 1] == 'w') {
+      if (perm[type + 2] == 'x') return get_FilePermissionStr(WRITE_EXECUTE);
+      return get_FilePermissionStr(WRITE);
+    }
+    if (perm[type + 2] == 'x') return get_FilePermissionStr(EXECUTE);
+  }
+  return get_FilePermissionStr(NONE);
+}
