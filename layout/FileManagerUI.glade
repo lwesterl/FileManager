@@ -202,6 +202,7 @@
                   <object class="GtkBox" id="FilePropertiesFilenameBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="spacing">5</property>
                     <child>
                       <object class="GtkLabel" id="FilePropertiesFilenameLabel">
                         <property name="visible">True</property>
@@ -236,6 +237,7 @@
                   <object class="GtkBox" id="FilePropertiesTypeBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="spacing">5</property>
                     <child>
                       <object class="GtkLabel" id="FilePropertiesTypeLabel">
                         <property name="visible">True</property>
@@ -270,6 +272,7 @@
                   <object class="GtkBox" id="FilePropertiesParentFolderBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="spacing">5</property>
                     <child>
                       <object class="GtkLabel" id="FilePropertiesParentFolderLabel">
                         <property name="visible">True</property>
@@ -304,6 +307,7 @@
                   <object class="GtkBox" id="FilePropertiesFileSizeBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="spacing">5</property>
                     <child>
                       <object class="GtkLabel" id="FilePropertiesFileSizeLabel">
                         <property name="visible">True</property>
@@ -338,6 +342,7 @@
                   <object class="GtkBox" id="FilePropertiesLastModifiedBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="spacing">5</property>
                     <child>
                       <object class="GtkLabel" id="FilePropertiesLastModifiedLabel">
                         <property name="visible">True</property>
@@ -395,6 +400,7 @@
                       <object class="GtkBox" id="FilePropertiesOwnerNameBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="spacing">5</property>
                         <child>
                           <object class="GtkLabel" id="FilePropertiesOwnerLabel">
                             <property name="visible">True</property>
@@ -429,6 +435,7 @@
                       <object class="GtkBox" id="FilePropertiesOwnerPermissionsBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="spacing">5</property>
                         <child>
                           <object class="GtkLabel" id="FilePropertiesOwnerPermissionsLabel">
                             <property name="visible">True</property>
@@ -475,6 +482,7 @@
                       <object class="GtkBox" id="FilePropertiesGroupNameBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="spacing">5</property>
                         <child>
                           <object class="GtkLabel" id="FilePropertiesGroupLabel">
                             <property name="visible">True</property>
@@ -509,6 +517,7 @@
                       <object class="GtkBox" id="FilePropertiesGroupPermissionsBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="spacing">5</property>
                         <child>
                           <object class="GtkLabel" id="FilePropertiesGroupPermissionsLabel">
                             <property name="visible">True</property>
@@ -550,6 +559,7 @@
                   <object class="GtkBox" id="FilePropertiesOthersBox">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="spacing">5</property>
                     <child>
                       <object class="GtkLabel" id="FilePropertiesOthersPermissionsLabel">
                         <property name="visible">True</property>
