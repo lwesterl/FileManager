@@ -103,6 +103,7 @@ void initUI(int argc, char *argv[]) {
   init_ConnectWindow();
   init_MessageWindow();
   init_PopOverDialog();
+  init_FilePropertiesDialog();
   gtk_builder_connect_signals(builder, NULL);
   gtk_widget_show_all(connectWindow->ConnectDialog);
 
@@ -132,6 +133,7 @@ void quitUI() {
   free(connectWindow);
   free(messageWindow);
   free(popOverDialog);
+  free(filePropertiesDialog);
 }
 
 void init_MainWindow() {
@@ -211,6 +213,9 @@ void init_ContextMenu() {
   mainWindow->contextMenu->show_hidden_files = (GtkMenuItem *) gtk_check_menu_item_new_with_label(get_ContextMenuAction_name(SHOW_HIDDEN_FILES));
   g_signal_connect((GtkCheckMenuItem *) mainWindow->contextMenu->show_hidden_files, "toggled", G_CALLBACK(toggle_HiddenFiles), NULL);
   gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->show_hidden_files, 0, 1, 5, 6);
+  mainWindow->contextMenu->properties = (GtkMenuItem *) gtk_menu_item_new_with_label(get_ContextMenuAction_name(FILE_PROPERTIES));
+  gtk_menu_attach(mainWindow->contextMenu->Menu, (GtkWidget *) mainWindow->contextMenu->properties, 0, 1, 6, 7);
+  g_signal_connect(mainWindow->contextMenu->properties, "button_press_event", G_CALLBACK(ContextMenuItem_action), mainWindow->contextMenu->properties);
 }
 
 void init_ConnectWindow() {
@@ -276,6 +281,27 @@ gboolean close_PopOverDialog() {
     free(popOverDialog->filename);
     popOverDialog->filename = NULL;
   }
+  return TRUE;
+}
+
+void init_FilePropertiesDialog() {
+  filePropertiesDialog = malloc(sizeof(FilePropertiesDialog));
+  filePropertiesDialog->FilePropertiesDialog = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesDialog"));
+  filePropertiesDialog->FilePropertiesFilename = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesFilename"));
+  filePropertiesDialog->FilePropertiesType = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesType"));
+  filePropertiesDialog->FilePropertiesParentFolder = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesParentFolder"));
+  filePropertiesDialog->FilePropertiesFileSize = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesFileSize"));
+  filePropertiesDialog->FilePropertiesLastModified = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesLastModified"));
+  filePropertiesDialog->FilePropertiesOwner = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesOwner"));
+  filePropertiesDialog->FilePropertiesOwnerPermissions = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesOwnerPermissions"));
+  filePropertiesDialog->FilePropertiesGroup = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesGroup"));
+  filePropertiesDialog->FilePropertiesGroupPermissions = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesGroupPermissions"));
+  filePropertiesDialog->FilePropertiesOthersPermissions = GTK_WIDGET(gtk_builder_get_object(builder, "FilePropertiesOthersPermissions"));
+  g_signal_connect(filePropertiesDialog->FilePropertiesDialog, "delete-event", G_CALLBACK(close_FilePropertiesDialog), NULL);
+}
+
+gboolean close_FilePropertiesDialog() {
+  gtk_widget_hide(filePropertiesDialog->FilePropertiesDialog);
   return TRUE;
 }
 
@@ -370,6 +396,24 @@ gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event) {
   return FALSE;
 }
 
+void transition_FilePropertiesDialog() {
+  char *filename = get_selected_filename();
+  if (filename) {
+    GSList *files = mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView ? localFileStore->files : remoteFileStore->files;
+    const char *parent_folder = mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView ? local_pwd : remote_pwd;
+    const GSList *item = g_slist_find_custom(files, filename, compare_File_GSLists);
+    if (item) {
+      const File_t *file = (const File_t *) item;
+      printf("size: %ld\n", file->size);
+      printf("mtime: %ld\n", file->mtime);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesFilename), filename);
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesParentFolder), parent_folder);
+      gtk_widget_show_all(filePropertiesDialog->FilePropertiesDialog);
+    }
+    free(filename);
+  }
+}
+
 void show_ContextMenu_buttons(bool file_selected) {
   gboolean selected = (gboolean) file_selected;
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->copy), selected && !worker_running);
@@ -378,6 +422,7 @@ void show_ContextMenu_buttons(bool file_selected) {
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->create_folder), !selected && !worker_running);
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->delete), selected && !worker_running);
   gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->show_hidden_files), !worker_running);
+  gtk_widget_set_sensitive(GTK_WIDGET(mainWindow->contextMenu->properties), selected);
 }
 
 
@@ -555,8 +600,10 @@ void ContextMenuItem_action(GtkMenuItem *menuItem, __attribute__((unused)) gpoin
     rename_file();
   } else if (menuItem == mainWindow->contextMenu->create_folder) {
     create_folder();
-  } else {
+  } else if (menuItem == mainWindow->contextMenu->delete) {
     delete_file_threaded(false);
+  } else if (menuItem == mainWindow->contextMenu->properties) {
+    transition_FilePropertiesDialog();
   }
 }
 

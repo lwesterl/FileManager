@@ -42,6 +42,7 @@ typedef struct {
   GtkMenuItem *create_folder; /**< GtkMenuItem triggers create folder operation */
   GtkMenuItem *delete; /**< GtkMenuItem triggers recursive file/directory removal */
   GtkMenuItem *show_hidden_files; /**< GtkMenuItem to show/hide hidden files */
+  GtkMenuItem *properties; /**< GtkMenuItem to show filePropertiesDialog */
 } ContextMenu;
 
 /**
@@ -54,7 +55,8 @@ enum ContextMenuActions {
   RENAME, /**< Rename selected files */
   CREATE_FOLDER, /**< Create new folder */
   DELETE, /**< Delete file/directory */
-  SHOW_HIDDEN_FILES /**< Show hidden files */
+  SHOW_HIDDEN_FILES, /**< Show hidden files */
+  FILE_PROPERTIES /**< Show filePropertiesDialog */
 };
 
 /**< String names for ContextMenuActions */
@@ -65,7 +67,8 @@ static const char* const ContextMenuAction_names[] =
   "Rename",
   "Create new folder",
   "Delete",
-  "Show hidden files"
+  "Show hidden files",
+  "Properties"
 };
 
 /**
@@ -199,6 +202,24 @@ typedef struct {
 } PopOverDialog;
 
 /**
+  *   @struct FilePropertiesDialog
+  *   @brief Contains FilePropertiesDialog and its updatable child elements
+  */
+typedef struct {
+  GtkWidget *FilePropertiesDialog; /**< Top-level pop-up dialog, @see FileManagerUI.glade */
+  GtkWidget *FilePropertiesFilename; /**< @see FileManagerUI.glade FilePropertiesFilename */
+  GtkWidget *FilePropertiesType; /**< @see FileManagerUI.glade FilePropertiesType */
+  GtkWidget *FilePropertiesParentFolder; /**< @see FileManagerUI.glade FilePropertiesParentFolder */
+  GtkWidget *FilePropertiesFileSize; /**< @see FileManagerUI.glade FilePropertiesFileSize */
+  GtkWidget *FilePropertiesLastModified; /**< @see FileManagerUI.glade FilePropertiesLastModified */
+  GtkWidget *FilePropertiesOwner; /**< @see FileManagerUI.glade FilePropertiesOwner */
+  GtkWidget *FilePropertiesOwnerPermissions; /**< @see FileManagerUI.glade FilePropertiesOwnerPermissions */
+  GtkWidget *FilePropertiesGroup; /**< @see FileManagerUI.glade FilePropertiesGroup */
+  GtkWidget *FilePropertiesGroupPermissions; /**< @see FileManagerUI.glade FilePropertiesGroupPermissions */
+  GtkWidget *FilePropertiesOthersPermissions; /**< @see FileManagerUI.glade FilePropertiesOthersPermissions */
+} FilePropertiesDialog;
+
+/**
   *   @struct FileStore
   *   @brief Used to store displayed files
   */
@@ -276,6 +297,7 @@ MainWindow *mainWindow; /**< Pointer to the main window instance */
 MessageWindow *messageWindow; /**< Pointer to a message window */
 ConnectWindow *connectWindow; /**< Pointer to the connect window */
 PopOverDialog *popOverDialog; /**< Pointer to a PopOverDialog struct */
+FilePropertiesDialog *filePropertiesDialog; /**< Pointer to a FilePropertiesDialog  struct */
 Session *session; /**< SSH Session pointer */
 FileStore *remoteFileStore; /**< Used to store displayed elements which correspond to RemoteFiles */
 FileStore *localFileStore; /**< Uses to store displayed elements which correspond to LocalFiles */
@@ -360,8 +382,21 @@ void init_PopOverDialog();
 
 /**
   *   @brief Close popOverDialog
+  *   @return TRUE to indicate that the event has been handled
   */
 gboolean close_PopOverDialog();
+
+/**
+  *   @brief Init filePropertiesDialog
+  *   @remark Intended to be called only once from initUI
+  */
+void init_FilePropertiesDialog();
+
+/**
+  *   @brief Close filePropertiesDialog
+  *   @return TRUE to indicate that the event has been handled
+  */
+gboolean close_FilePropertiesDialog();
 
 /**
   *   @brief Clear ContextMenu
@@ -393,6 +428,12 @@ void transition_MainWindow();
   *   @param event Event which triggered the transition, callback event
   */
 gboolean transition_ContextMenu(GtkWidget *widget, GdkEvent *event);
+
+/**
+*   @brief Show FilePropertiesDialog
+*   @remark mainWindow->contextMenu->ContextMenuEmitter must have been set
+*/
+void transition_FilePropertiesDialog();
 
 /**
   *   @brief Show correct ContextMenu buttons

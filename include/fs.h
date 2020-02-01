@@ -61,6 +61,18 @@ struct File {
 typedef struct File File_t; /**< Needed for FileList iteration */
 
 /**
+  *   @brief Comparison function to find correct element from GSList
+  *   containing File structs
+  *   @param item Constant pointer to a GSList File struct
+  *   @param filename Filename which is tried to find from the list
+  *   @return 0 if the filename is found, otherwise it's not found
+  */
+static inline int compare_File_GSLists(gconstpointer item, gconstpointer filename) {
+  const File_t *file = (const File_t *) item;
+  return strcmp(file->name, filename);
+}
+
+/**
   *   @struct FileCopy
   *   @brief Contains information about a file to be copied
   *   @remark These are stored in linked lists
