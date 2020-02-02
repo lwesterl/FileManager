@@ -33,14 +33,14 @@ gboolean check_asyncQueue(gpointer user_data) {
     } else if (worker_msg->msg == STOP_FILE_OPERATIONS) {
       stop = 0;
       Session_message(session, get_error(INFO_CANCELED_OPERATION));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_INFO, session->message);
     } else if (worker_msg->msg != FILE_WRITTEN_SUCCESSFULLY) {
       if (worker_msg->workType == PASTE_FILES) {
         Session_message(session, get_error(ERROR_FILE_COPY_FAILED));
       } else {
         Session_message(session, get_error(ERROR_DELETE_FILE));
       }
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     }
     free_WorkerMessage_t(worker_msg);
     gtk_widget_hide(mainWindow->LeftStopButton);
@@ -319,7 +319,7 @@ void transition_MessageWindow(const enum MessageType messageType, const char *me
   messageWindow->messageType = messageType;
   gtk_label_set_text((GtkLabel*) messageWindow->MessageLabel, message);
   gtk_widget_show_all(messageWindow->MessageDialog);
-  if (messageType == INFO_ERROR) {
+  if (messageType == MESSAGETYPE_INFO || messageType == MESSAGETYPE_ERROR) {
     // CancelButton not available
     gtk_widget_hide(messageWindow->CancelButton);
   }
@@ -344,7 +344,7 @@ void transition_MainWindow() {
     gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
   } else {
     // Some error happened
-    transition_MessageWindow(INFO_ERROR, session->message);
+    transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
   }
 }
 
@@ -499,7 +499,7 @@ void ConnectButton_action(__attribute__((unused)) GtkButton *ConnectButton) {
   // Try to connect using create_session() and autheticate_init()
   session = create_session(username, ip);
   if (session == NULL) {
-    transition_MessageWindow(INFO_ERROR, get_error(SSH_CREATE_ERROR));
+    transition_MessageWindow(MESSAGETYPE_ERROR, get_error(SSH_CREATE_ERROR));
     return;
   }
   enum AuthenticationAction result = authenticate_init(session);
@@ -511,14 +511,14 @@ void ConnectButton_action(__attribute__((unused)) GtkButton *ConnectButton) {
       if (authenticate_password(session, password) == AUTHENTICATION_OK) {
         transition_MainWindow();
       } else {
-        transition_MessageWindow(INFO_ERROR, session->message);
+        transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
       }
       break;
     case AUTHENTICATION_ASK:
       transition_MessageWindow(ASK_SSH, session->message);
       break;
     case AUTHENTICATION_ERROR:
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     default:
       return;
   }
@@ -542,11 +542,11 @@ void OkButton_action(__attribute__((unused)) GtkButton *OkButton) {
         if (authenticate_password(session, password) == AUTHENTICATION_OK) {
           transition_MainWindow();
         } else {
-          transition_MessageWindow(INFO_ERROR, session->message);
+          transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
         }
         break;
       case AUTHENTICATION_ERROR:
-        transition_MessageWindow(INFO_ERROR, session->message);
+        transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
       default:
         return;
     }
@@ -644,7 +644,7 @@ void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDial
     free(old_path);
     if (result < 0) {
       Session_message(session, get_error(ERROR_RENAMING_FILE));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     }
   } else {
     // Create a new directory
@@ -661,7 +661,7 @@ void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDial
     free(dir_path);
     if (result < 0) {
       Session_message(session, get_error(ERROR_MK_DIR));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     }
   }
   close_PopOverDialog();
@@ -809,7 +809,7 @@ int show_FileStore(const char *pwd, const bool remote) {
       gtk_widget_hide(mainWindow->RightStopButton);
     } else {
       Session_message(session, get_error(ERROR_DISPLAYING_REMOTE_FILES));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
       return -1;
     }
   } else {
@@ -822,7 +822,7 @@ int show_FileStore(const char *pwd, const bool remote) {
       gtk_widget_hide(mainWindow->RightStopButton);
     } else {
       Session_message(session, get_error(ERROR_DISPLAYING_LOCAL_FILES));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
       return -1;
     }
   }
@@ -834,13 +834,13 @@ void update_FileView(bool remote) {
     if (show_FileStore(remote_pwd, true) == 0) {
       gtk_label_set_text((GtkLabel *) mainWindow->RightInnerFrameLabel, remote_pwd);
     } else {
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     }
   } else {
     if (show_FileStore(local_pwd, false) == 0) {
       gtk_label_set_text((GtkLabel *) mainWindow->LeftInnerFrameLabel, local_pwd);
     } else {
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     }
   }
 }
@@ -925,7 +925,7 @@ void delete_file_threaded(bool finalize) {
     if (worker_data) free_WorkerThread_t(worker_data);
     g_free(filename);
     Session_message(session, get_error(ERROR_FILE_DELETE_FAILED));
-    transition_MessageWindow(INFO_ERROR, session->message);
+    transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
 }
 
 void delete_file(bool finalize) {
@@ -937,13 +937,13 @@ void delete_file(bool finalize) {
       path = construct_filepath(local_pwd, filename);
       if (remove_completely(path) < 0) {
         Session_message(session, get_error(ERROR_DELETE_FILE));
-        transition_MessageWindow(INFO_ERROR, session->message);
+        transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
       }
       show_FileStore(local_pwd, false);
     } else {
       path = construct_filepath(remote_pwd, filename);
       if (sftp_session_remove_completely_file(session, path) < 0) {
-        transition_MessageWindow(INFO_ERROR, session->message);
+        transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
       }
       show_FileStore(remote_pwd, true);
     }
@@ -1029,7 +1029,7 @@ void paste_files_threaded(const bool overwrite) {
       if (worker_data->fileCopies) clear_FileCopyList(worker_data->fileCopies);
       free(worker_data);
       Session_message(session, get_error(FILE_COPY_FAILED));
-      transition_MessageWindow(INFO_ERROR, session->message);
+      transition_MessageWindow(MESSAGETYPE_ERROR, session->message);
     }
 }
 

@@ -153,8 +153,9 @@ typedef struct {
   *   @brief Describes which type of a message MessageWindow is showing
   */
 enum MessageType {
+  MESSAGETYPE_INFO, /**< Message is an info */
+  MESSAGETYPE_ERROR, /**< Message is an error */
   ASK_SSH, /**< A message contains a ssh key which needs user interaction */
-  INFO_ERROR, /**< A message is either an info or an error message */
   ASK_DELETE, /**< Ask user whether he/she wants to permanently delete file */
   ASK_OVERWRITE /**< Ask user whether to overwrite existing files */
 };
