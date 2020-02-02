@@ -651,11 +651,11 @@ void PopOverDialogOkButton_action(__attribute__((unused)) GtkButton *PopOverDial
     char *dir_path;
     if (mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView) {
       dir_path = construct_filepath(local_pwd, new_name);
-      result = fs_mkdir(dir_path);
+      result = fs_mkdir(dir_path, 0);
       show_FileStore(local_pwd, false);
     } else {
       dir_path = construct_filepath(remote_pwd, new_name);
-      result = sftp_session_mkdir(session, dir_path);
+      result = sftp_session_mkdir(session, dir_path, 0);
       show_FileStore(remote_pwd, true);
     }
     free(dir_path);

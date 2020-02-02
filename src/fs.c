@@ -82,8 +82,8 @@ bool fs_is_filename_folder(const char *filename, const char *pwd) {
   return ret;
 }
 
-enum FileStatus fs_mkdir(const char *dir_name) {
-  int permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
+enum FileStatus fs_mkdir(const char *dir_name, mode_t permissions) {
+  if (permissions == 0) permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
   if (!file_exists(dir_name)) {
     if (mkdir(dir_name, permissions) != 0) {
       return MKDIR_FAILED;
@@ -265,8 +265,12 @@ enum FileStatus fs_copy_dir(  const char *src,
     free(new_dir);
     return DIR_ALREADY_EXISTS;
   }
+  if (stat(src, &st) != 0) {
+    free(new_dir);
+    return FILE_COPY_FAILED;
+  }
   if (!exists) {
-    ret = fs_mkdir(new_dir);
+    ret = fs_mkdir(new_dir, st.st_mode);
     if (ret == MKDIR_FAILED) return FILE_COPY_FAILED;
   }
   if (recursive) {

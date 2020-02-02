@@ -156,10 +156,12 @@ bool sftp_session_is_filename_folder(Session *session, const char *filename, con
   *   @brief Create new directory using sftp
   *   @param session Session which contains already established sftp connection
   *   @param dir_name Directory name
+  *   @param permissions With the folder is created with. When permissions == 0,
+  *   default permissions are used
   *   @return 0 on success, on error either DIR_ALREADY_EXISTS or MKDIR_FAILED
   *   @remark This is only a wrapper for libssh sftp_mkdir
   */
-enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name);
+enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name, mode_t permissions);
 
 /**
   *   @brief List remote files using sftp
@@ -178,13 +180,16 @@ GSList *sftp_session_ls_dir(Session *session, GSList *files, const char *dir_nam
   *   @param buff Buffer which contains the file content
   *   @param len buff length in bytes
   *   @param overwrite Whether to overwrite if the file already exists
+  *   @param permissions Permissions for the file to be created with. When
+  *   permissions == 0, default permissions are used
   *   @return FileStatus (sets corresponding error message, @see Session_message)
   */
 enum FileStatus sftp_session_write_file(  Session *session,
                                           const char *filename,
                                           const char *buff,
                                           const size_t len,
-                                          const bool overwrite);
+                                          const bool overwrite,
+                                          mode_t permissions);
 
 /**
   *   @brief Read (copy) file from remote to the host machine

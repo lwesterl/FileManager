@@ -19,7 +19,7 @@ void print_File(File_t *file, __attribute__((unused)) void *ptr) {
 int main() {
   const char *dir_name = "testDIR";
   const char *dir_name2 = "testDIR2";
-  assert(fs_mkdir(dir_name) == FILE_WRITTEN_SUCCESSFULLY);
+  assert(fs_mkdir(dir_name, 0) == FILE_WRITTEN_SUCCESSFULLY);
   assert(file_exists(dir_name));
   assert(!file_exists("some_random_file_name"));
 
@@ -46,8 +46,8 @@ int main() {
   const char *dst_dir = "TEST_test2";
   const char *filepath = "TEST_test/test.txt";
   const char *filename = "test.txt";
-  assert(fs_mkdir(src_dir) == FILE_WRITTEN_SUCCESSFULLY);
-  assert(fs_mkdir(dst_dir) == FILE_WRITTEN_SUCCESSFULLY);
+  assert(fs_mkdir(src_dir, 0) == FILE_WRITTEN_SUCCESSFULLY);
+  assert(fs_mkdir(dst_dir, 0) == FILE_WRITTEN_SUCCESSFULLY);
   fd = open(filepath, O_CREAT | O_WRONLY, S_IRWXU);
   if (fd) {
     const char *text = "Hello\nHello\nWhat's up?\nNothing special, I'm just testing\n....\n";

@@ -224,10 +224,12 @@ bool fs_is_filename_folder(const char *filename, const char *pwd);
 /**
   *   @brief Create a new directory
   *   @param dir_name Path to the directory to be created
+  *   @param permissions Permissions which can be get from stat_st_mode
+  *   In case permissions == 0, defaults are used
   *   @return FILE_WRITTEN_SUCCESSFULLY on success, MKDIR_FAILED or DIR_ALREADY_EXISTS
   *   on error
   */
-enum FileStatus fs_mkdir(const char *dir_name);
+enum FileStatus fs_mkdir(const char *dir_name, mode_t permissions);
 
 /**
   *   @brief Remove a directory

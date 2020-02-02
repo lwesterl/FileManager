@@ -292,8 +292,8 @@ bool sftp_session_is_filename_folder(Session *session, const char *filename, con
   return ret;
 }
 
-enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name) {
-  int permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
+enum FileStatus sftp_session_mkdir(Session *session, const char *dir_name, mode_t permissions) {
+  if (permissions == 0) permissions = S_IRWXU | S_IRGRP | S_IXGRP | S_IXOTH;
   if (sftp_mkdir(session->sftp, dir_name, permissions) != SSH_OK) {
     if (sftp_get_error(session->sftp) == SSH_FX_FILE_ALREADY_EXISTS) {
       //Session_message(session, ssh_get_error(session->session));
@@ -351,10 +351,11 @@ enum FileStatus sftp_session_write_file(  Session *session,
                                           const char *filename,
                                           const char *buff,
                                           const size_t len,
-                                          const bool overwrite)
+                                          const bool overwrite,
+                                          mode_t permissions)
 {
   int write_flags = overwrite ? O_WRONLY | O_CREAT | O_TRUNC : O_WRONLY | O_CREAT | O_EXCL;
-  int permissions = S_IRWXU;
+  if (permissions == 0) permissions = S_IRWXU;
   int to_written = (int) len;
   int write_len, written = 0;
 
@@ -395,8 +396,11 @@ enum FileStatus sftp_session_read_file( Session *session,
   int nread, nwritten;
   int fd;
   int write_flags = overwrite ? O_CREAT | O_WRONLY | O_TRUNC : O_CREAT | O_WRONLY | O_EXCL;
-  int permissions = S_IRWXU;
-
+  mode_t permissions = S_IRWXU;
+  sftp_attributes attr = sftp_stat(session->sftp, remote_filename);
+  if (!attr) return FILE_WRITE_FAILED;
+  permissions = attr->permissions;
+  sftp_attributes_free(attr);
   file = sftp_open(session->sftp, remote_filename, O_RDONLY, 0);
   if (!file) {
     Session_message(session, get_error(ERROR_OPENING_FILE));
@@ -521,6 +525,7 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
       free(remote_filepath);
       return FILE_COPY_FAILED;
     }
+    mode_t permissions = st.st_mode;
     if (S_ISDIR(st.st_mode)) {
       // Copy directory
       DIR *dir = NULL;
@@ -531,7 +536,7 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
         return FILE_COPY_FAILED;
       }
       // Create the dir on remote
-      ret = sftp_session_mkdir(session, remote_filepath);
+      ret = sftp_session_mkdir(session, remote_filepath, permissions);
       if (ret < 0 && !(overwrite && ret == DIR_ALREADY_EXISTS)) {
         free(remote_filepath);
         closedir(dir);
@@ -566,7 +571,7 @@ enum FileStatus sftp_session_copy_to_remote(  Session *session,
       // Copy file
       struct FileContent *content = fs_read_file(local_filepath);
       if (content) {
-        ret = sftp_session_write_file(session, remote_filepath, content->buff, (size_t) content->len, overwrite);
+        ret = sftp_session_write_file(session, remote_filepath, content->buff, (size_t) content->len, overwrite, permissions);
         free_FileContent(content);
         if (ret < 0) {
           free(remote_filepath);
@@ -596,6 +601,11 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
   char *local_filepath = construct_filepath(local_dir, filename);
   if (!local_filepath) return FILE_COPY_FAILED;
   attr = sftp_stat(session->sftp, remote_filepath);
+  if (!attr) {
+    free(local_filepath);
+    return FILE_COPY_FAILED;
+  }
+  uint32_t permissions = attr->permissions;
   bool folder = is_folder(attr->type);
   sftp_attributes_free(attr);
   if (folder) {
@@ -606,7 +616,7 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
       return FILE_COPY_FAILED;
     }
     // Create the local folder
-    ret = fs_mkdir(local_filepath);
+    ret = fs_mkdir(local_filepath, permissions);
     if (ret < 0 && !(overwrite && ret == DIR_ALREADY_EXISTS)) {
       free(local_filepath);
       return ret;
