@@ -552,7 +552,7 @@ void PopOverDialogCancelButton_action(GtkButton *PopOverDialogCancelButton);
 void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
 
 /**
-  *   @brief Handler for mainWindow keypress events
+  *   @brief Handler for LeftFileView and RightFileView keypress events
   *   @param widget Widget which created the event, must be either LeftFileView
   *   or RightFileView
   *   @param event Keypress event
@@ -561,6 +561,16 @@ void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
   *   event propagation
   */
 gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
+
+/**
+  *   @brief Handler for mainWindow->TopWindow keypress events
+  *   @param widget mainWindow->TopWindow
+  *   @param event Keypress event
+  *   @param data Addtional pointer, unused
+  *   @return FALSE to further process the event, TRUE to stop the event
+  *   propagation
+  */
+gboolean TopWindow_keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
 
 /**
   *   @brief Toggle hidden files either shown or hidden

@@ -117,7 +117,7 @@ void quitUI() {
   stop = 1;
   // Quit gtk event loop
   gtk_main_quit();
-  while (worker_running);
+  pthread_join(tid, NULL);
   if (session) {
     end_session(session);
   }
@@ -181,6 +181,7 @@ void init_MainWindow() {
   init_ContextMenu();
 
   g_signal_connect(mainWindow->TopWindow, "destroy", G_CALLBACK(quitUI), NULL);
+  g_signal_connect(G_OBJECT(mainWindow->TopWindow), "key_press_event", G_CALLBACK(TopWindow_keypress_handler), NULL);
   g_signal_connect_swapped(mainWindow->LeftFileView, "button_press_event", G_CALLBACK(transition_ContextMenu), mainWindow->LeftFileView);
   g_signal_connect_swapped(mainWindow->RightFileView, "button_press_event", G_CALLBACK(transition_ContextMenu), mainWindow->RightFileView);
   gtk_widget_add_events(mainWindow->LeftFileView, GDK_KEY_PRESS_MASK);
@@ -731,6 +732,16 @@ gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((
       mainWindow->contextMenu->ContextMenuEmitter = widget;
       transition_FilePropertiesDialog();
     }
+  return FALSE;
+}
+
+gboolean TopWindow_keypress_handler(GtkWidget *widget, GdkEventKey *event, __attribute__((unused)) gpointer data) {
+  if (widget == mainWindow->TopWindow) {
+    if ((event->keyval == GDK_KEY_q || event->keyval == GDK_KEY_Q) && (event->state & GDK_CONTROL_MASK)) {
+      quitUI();
+      return TRUE;
+    }
+  }
   return FALSE;
 }
 
