@@ -6,6 +6,9 @@
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">FileManager</property>
     <property name="window_position">center</property>
+    <property name="default_width">850</property>
+    <property name="default_height">450</property>
+    <property name="icon">logo/FileManager_logo.png</property>
     <child>
       <placeholder/>
     </child>
@@ -374,16 +377,14 @@
   </object>
   <object class="GtkDialog" id="ConnectDialog">
     <property name="can_focus">False</property>
+    <property name="title" translatable="yes">FileManager</property>
     <property name="modal">True</property>
     <property name="window_position">center</property>
+    <property name="icon">logo/FileManager_logo.png</property>
     <property name="type_hint">dialog</property>
     <property name="transient_for">TopWindow</property>
     <child type="titlebar">
-      <object class="GtkLabel" id="ConnectDialogLabel">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Establish SSH connection</property>
-      </object>
+      <placeholder/>
     </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="ConnectDialogBox">
