@@ -8,6 +8,8 @@
 #define ASSETS_HEADER
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gio/gio.h>
+#include <gtk/gtk.h>
 #include <libssh/sftp.h>
 
 #include <stdlib.h>
@@ -18,6 +20,7 @@
 #include <sys/types.h>
 #include <time.h>
 
+#define CSS_FILE_PATH "../layout/styles.css" /**< Path to the css file */
 
 /**
   *   @enum bool
@@ -128,6 +131,13 @@ inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type) {
   *   @return true if init was succesful, otherwise false
   */
 bool init_assets();
+
+/**
+  *   @brief Load css styles
+  *   @remark This must not be run prior the main window is created
+  *   (call this from initUI)
+  */
+void load_css_styles();
 
 /**
   *   @brief Clear allocated assets

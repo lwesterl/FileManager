@@ -1,0 +1,7 @@
+/*  css for FileManager
+    Author: Lauri Westerholm
+*/
+
+iconview:hover {
+   -gtk-icon-effect :  highlight;
+}
