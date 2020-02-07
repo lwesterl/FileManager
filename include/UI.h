@@ -564,14 +564,15 @@ void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
 gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
 
 /**
-  *   @brief Handler for mainWindow->TopWindow keypress events
-  *   @param widget mainWindow->TopWindow
+  *   @brief Handler for mainWindow->TopWindow and connectWindow->ConnectDialog
+  *   keypress events
+  *   @param widget mainWindow->TopWindow or connectWindow->ConnectDialog
   *   @param event Keypress event
   *   @param data Addtional pointer, unused
   *   @return FALSE to further process the event, TRUE to stop the event
   *   propagation
   */
-gboolean TopWindow_keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
+gboolean MainWindow_keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
 
 /**
   *   @brief Toggle hidden files either shown or hidden
