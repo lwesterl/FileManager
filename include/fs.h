@@ -147,8 +147,9 @@ inline static GSList *append_FileList(GSList *files, struct File *file) {
   *   @param files Pointer to a linked list containing File structs, additionally void * can be passed
   *   @param f Pointer to a function which is executed for each entry in the list
   *   @param ptr Additional pointer which is passed to the function
+  *   @param remote Whether the iteration happens on remote file system
   */
-void iterate_FileList(GSList *files, void f (File_t*, void *), void *ptr);
+void iterate_FileList(GSList *files, void f (File_t*, void *, const bool remote), void *ptr, const bool remote);
 
 /**
   *   @brief Free FileCopy struct

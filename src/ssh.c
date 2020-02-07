@@ -284,7 +284,7 @@ bool sftp_session_is_filename_folder(Session *session, const char *filename, con
   if (filepath) {
     attr = sftp_stat(session->sftp, filepath);
     if (attr) {
-      ret = is_folder(attr->type);
+      ret = is_folder(attr->type, true);
       sftp_attributes_free(attr);
     }
     free(filepath);
@@ -465,7 +465,7 @@ enum FileStatus sftp_session_rmdir(Session *session, const char *dir_name, bool 
           return FILE_REMOVE_FAILED;
         }
 
-        if (is_folder(attr->type)) {
+        if (is_folder(attr->type, true)) {
           ret = sftp_session_rmdir(session, filepath, true);
         } else {
           if (sftp_unlink(session->sftp, filepath) != 0) ret = FILE_REMOVE_FAILED;
@@ -492,7 +492,7 @@ enum FileStatus sftp_session_remove_completely_file(Session *session, const char
   attr = sftp_stat(session->sftp, filepath);
   int ret = FILE_REMOVE_FAILED;
   if (attr) {
-    if (is_folder(attr->type)) {
+    if (is_folder(attr->type, true)) {
       sftp_attributes_free(attr);
       if ((ret = sftp_session_rmdir(session, filepath, true)) != 0) {
         Session_message(session, get_error(ERROR_DELETE_REMOTE_DIR));
@@ -606,7 +606,7 @@ enum FileStatus sftp_session_copy_from_remote(  Session *session,
     return FILE_COPY_FAILED;
   }
   uint32_t permissions = attr->permissions;
-  bool folder = is_folder(attr->type);
+  bool folder = is_folder(attr->type, true);
   sftp_attributes_free(attr);
   if (folder) {
     // Copy folder recursively from remote
@@ -676,7 +676,7 @@ enum FileStatus sftp_session_copy_on_remote(    Session *session,
     return FILE_COPY_FAILED;
   }
   sftp_attributes attr = sftp_stat(session->sftp, src_filepath);
-  bool folder = is_folder(attr->type);
+  bool folder = is_folder(attr->type, true);
   sftp_attributes_free(attr);
   sftp_attributes attr2 = sftp_stat(session->sftp, dst_path);
   if (attr2) {

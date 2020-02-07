@@ -88,6 +88,7 @@ void *init_worker(void *ptr) {
 /* UI initializations */
 void initUI(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
+  if (!init_assets()) return; // Fatal error, quit
   session = NULL;
   remoteFileStore = NULL;
   localFileStore = NULL;
@@ -402,7 +403,8 @@ void transition_FilePropertiesDialog() {
   char *filename = get_selected_filename();
   if (filename) {
     GSList *files = mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView ? localFileStore->files : remoteFileStore->files;
-    const char *parent_folder = mainWindow->contextMenu->ContextMenuEmitter == mainWindow->LeftFileView ? local_pwd : remote_pwd;
+    const bool remote_file = mainWindow->contextMenu->ContextMenuEmitter == mainWindow->RightFileView;
+    const char *parent_folder = remote_file ? remote_pwd : local_pwd;
     const GSList *item = g_slist_find_custom(files, filename, compare_File_GSLists);
     if (item) {
       const File_t *file = (const File_t *) item->data;
@@ -410,7 +412,7 @@ void transition_FilePropertiesDialog() {
       char *size = get_size_str(file->size);
       char *permissions = get_file_permissions_str(file->permissions);
       gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesFilename), filename);
-      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesType), is_folder(file->type) ? "Folder" : "File");
+      gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesType), is_folder(file->type, remote_file) ? "Folder" : "File");
       gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesParentFolder), parent_folder);
       gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesFileSize), size);
       gtk_label_set_text(GTK_LABEL(filePropertiesDialog->FilePropertiesLastModified), local_time);
@@ -578,7 +580,7 @@ gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute_
                                             STRING_COLUMN, &filename,
                                             UINT_COLUMN, &filetype,
                                             -1);
-        if (is_folder(filetype)) {
+        if (is_folder(filetype, false)) {
           // Change directory
           local_pwd = cd_enter_pwd(local_pwd, filename);
           update_FileView(false);
@@ -591,7 +593,7 @@ gboolean FileView_OnButtonPress(GtkWidget *widget, GdkEvent *event, __attribute_
                                             STRING_COLUMN, &filename,
                                             UINT_COLUMN, &filetype,
                                             -1);
-        if (is_folder(filetype)) {
+        if (is_folder(filetype, true)) {
           // Change directory
           remote_pwd = cd_enter_pwd(remote_pwd, filename);
           update_FileView(true);
@@ -773,18 +775,18 @@ FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, bool rem
     return NULL;
   }
   // Append all entries
-  iterate_FileList(fileStore->files, add_FileStore, (void *) fileStore);
+  iterate_FileList(fileStore->files, add_FileStore, (void *) fileStore, remote);
   return fileStore;
 }
 
-void add_FileStore(struct File *file, void *ptr) {
+void add_FileStore(struct File *file, void *ptr, const bool remote) {
     FileStore *fileStore = (FileStore *) ptr;
     if ((strcmp(file->name, ".") != 0) && (strcmp(file->name, "..") != 0)) {
       if (show_hidden_files || (file->name[0] != '.')) {
         gtk_list_store_append(fileStore->listStore, &(fileStore->it));
         gtk_list_store_set( fileStore->listStore, &(fileStore->it),
                             STRING_COLUMN, (GValue *) file->name,
-                            PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type),
+                            PIXBUF_COLUMN, (GValue *) get_Icon_filetype(file->type, remote),
                             UINT_COLUMN, file->type,
                             -1);
       }

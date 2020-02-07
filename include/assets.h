@@ -40,12 +40,6 @@ enum Icon {
   FOLDER_ICON
 };
 
-/**< Paths mathing to Icons */
-static const char* const IconPaths[] = {
-  "../layout/icons/Gnome-text-x-generic.svg",
-  "../layout/icons/Gnome-folder.svg"
-};
-
 /**
   *   @enum FilePermissions
   *   @brief Contains different file permission combinations
@@ -84,7 +78,7 @@ enum PermissionType {
 };
 
 
-extern const GdkPixbuf* iconImages[2]; /**< Stores Icon images */
+extern GdkPixbuf* iconImages[2]; /**< Stores Icon images */
 extern char *local_pwd; /**< Present local working directory */
 extern char *remote_pwd; /**< Present remote working directory */
 extern volatile sig_atomic_t stop; /**< Stopping condition, set by UI */
@@ -110,27 +104,37 @@ inline static const char *get_FilePermissionStr(const enum FilePermissions perm)
 /**
   *   @brief Check whether a file type indicates a folder
   *   @param file_type To be checked
+  *   @param remote Remote file (true) or local file (false)
   *   @return true if the file type corresponds to a folder
   */
-inline static bool is_folder(const uint8_t file_type) {
-  return ((file_type == 4) || (file_type == SSH_FILEXFER_TYPE_DIRECTORY) || (file_type == SSH_FILEXFER_TYPE_SYMLINK));
+inline static bool is_folder(const uint8_t file_type, const bool remote) {
+  if (remote) return ((file_type == SSH_FILEXFER_TYPE_DIRECTORY) || (file_type == SSH_FILEXFER_TYPE_SYMLINK));
+  return ((file_type == DT_DIR) || (file_type == DT_LNK));
 }
 
 /**
   *   @brief Get Icon, image based on file type
   *   @param file_type File type spesification
+  *   @param remote Remote file (true) or local file (false)
   *   @return const pointer to a GdkPixbuf
   */
-inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type) {
-  return  is_folder(file_type) ? iconImages[FOLDER_ICON] : iconImages[FILE_ICON];
+inline static const GdkPixbuf *get_Icon_filetype(const uint8_t file_type, const bool remote) {
+  return  is_folder(file_type, remote) ? iconImages[FOLDER_ICON] : iconImages[FILE_ICON];
 }
 
 /**
   *   @brief Initialize all assets
-  *   @remark Call this when the program is started
-  *   @return true if init was succesful, otherwise false
+  *   @remark Call this when the main window is started (from initUI)
+  *   @return true if init was succesful, otherwise false (in that case the
+  *   program should exit immediately)
   */
 bool init_assets();
+
+/**
+  *   @brief Clear allocated assets
+  *   @remark Call this just before the program exits
+  */
+void clear_assets();
 
 /**
   *   @brief Load css styles
@@ -138,12 +142,6 @@ bool init_assets();
   *   (call this from initUI)
   */
 void load_css_styles();
-
-/**
-  *   @brief Clear allocated assets
-  *   @remark Call this just before the program exits
-  */
-void clear_assets();
 
 /**
   *   @brief Change pwd

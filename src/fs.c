@@ -6,11 +6,11 @@
 
 #include "../include/fs.h"
 
-void iterate_FileList(GSList *files, void f (File_t *, void *), void *ptr) {
+void iterate_FileList(GSList *files, void f (File_t *, void *, const bool), void *ptr, const bool remote) {
   GSList *nxt = files;
   do {
     if (nxt) {
-      f((struct File *) nxt->data, ptr);
+      f((struct File *) nxt->data, ptr, remote);
     }
   } while ((nxt = nxt->next) != NULL);
 }
@@ -114,7 +114,7 @@ enum FileStatus fs_rmdir(const char *dir_name, const bool recursive) {
             return FILE_REMOVE_FAILED;
           }
 
-          if (is_folder(dt->d_type)) {
+          if (is_folder(dt->d_type, false)) {
             ret = fs_rmdir(filepath, true);
           } else {
             // Remove single file
@@ -292,7 +292,7 @@ enum FileStatus fs_copy_dir(  const char *src,
           closedir(dir);
           return FILE_COPY_FAILED;
         }
-        if (is_folder(dt->d_type)) {
+        if (is_folder(dt->d_type, false)) {
           // Copy a sub-directory
           ret = fs_copy_dir(src_path, dt->d_name, new_dir, recursive, overwrite);
         } else {

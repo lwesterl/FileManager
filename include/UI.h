@@ -597,8 +597,9 @@ FileStore *update_FileStore(FileStore *fileStore, const char *dir_name, const bo
   *   does not add "." and ".." filenames to FileStore
   *   @param file struct File instance
   *   @param ptr Pointer to a FileStore passed as void *
+  *   @param remote Whether this is a remote filesystem
   */
-void add_FileStore(struct File *file, void *ptr);
+void add_FileStore(struct File *file, void *ptr, const bool remote);
 
 /**
   *   @brief Clear fileStore contents and free allocated memory

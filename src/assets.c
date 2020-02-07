@@ -7,21 +7,37 @@
 #include "../include/assets.h"
 
 // Define globals
-const GdkPixbuf* iconImages[2];
+GdkPixbuf* iconImages[2] = {0};
 char *local_pwd = NULL;
 char *remote_pwd = NULL;
 volatile sig_atomic_t stop = 0;
 
 bool init_assets() {
   GError *error = NULL;
-  for (unsigned i = 0; i <= FOLDER_ICON; i++) {
-    iconImages[i] = gdk_pixbuf_new_from_file(IconPaths[i], &error);
-    if (iconImages[i] == NULL) {
-      fprintf(stderr, "Asset loading error: %s\n", error->message);
-      return false;
-    }
+  GtkIconTheme *icon_theme = gtk_icon_theme_get_default();
+  iconImages[FILE_ICON] = gtk_icon_theme_load_icon(icon_theme, "text-x-generic", 48, 0, &error);
+  if (!iconImages[FILE_ICON]) {
+    iconImages[FILE_ICON] = NULL;
+    fprintf(stderr, "Asset loading error: %s\n", error->message);
+    g_error_free(error);
+    return false;
+  }
+  iconImages[FOLDER_ICON] = gtk_icon_theme_load_icon(icon_theme, "folder", 48, 0, &error);
+  if (!iconImages[FOLDER_ICON]) {
+    fprintf(stderr, "Asset loading error: %s\n", error->message);
+    g_error_free(error);
+    g_object_unref(iconImages[FILE_ICON]);
+    iconImages[FILE_ICON] = NULL;
+    return false;
   }
   return true;
+}
+
+void clear_assets() {
+  if (local_pwd) free(local_pwd);
+  if (remote_pwd) free(remote_pwd);
+  if (iconImages[FILE_ICON]) g_object_unref(iconImages[FILE_ICON]);
+  if (iconImages[FOLDER_ICON]) g_object_unref(iconImages[FOLDER_ICON]);
 }
 
 void load_css_styles() {
@@ -33,11 +49,6 @@ void load_css_styles() {
                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(css_file);
   g_object_unref(css);
-}
-
-void clear_assets() {
-  if (local_pwd) free(local_pwd);
-  if (remote_pwd) free(remote_pwd);
 }
 
 char *change_pwd(char *pwd, const char *new_pwd) {
