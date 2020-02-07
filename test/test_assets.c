@@ -10,11 +10,12 @@
 #include "../include/assets.h"
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
   const char *path = "/home/test/";
   const char *path2 = "/home/test";
 
+  gtk_init(&argc, &argv);
   init_assets();
   local_pwd = change_pwd(local_pwd, path);
   assert(strcmp(path, local_pwd) == 0);

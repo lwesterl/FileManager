@@ -9,7 +9,9 @@
 #include "../include/fs.h"
 #include "../include/assets.h"
 
-void print_File(File_t *file, __attribute__((unused)) void *ptr) {
+void print_File(File_t *file,
+                __attribute__((unused)) void *ptr,
+                __attribute__((unused)) const bool remote) {
   printf("Filename: %s \t", file->name);
   printf("owner: %s, group: %s\t", file->owner, file->group);
   printf("type: %d, size: %ld\n", file->type, file->size);
@@ -26,7 +28,7 @@ int main() {
   GSList *files = NULL;
   assert((files = ls_dir(files, ".")));
   printf("files length: %d\n", g_slist_length(files));
-  iterate_FileList(files, print_File, NULL);
+  iterate_FileList(files, print_File, NULL, false);
   clear_Filelist(files);
 
   const char *file = "testDIR/test_file.txt";
