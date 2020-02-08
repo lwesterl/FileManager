@@ -217,7 +217,7 @@ bool file_exists(const char *filename);
 /**
   *   @brief Check whether a filename leads to a folder
   *   @param filename Name of the file in the pwd
-  *   @pwd Present working directory
+  *   @param pwd Present working directory
   *   @return true if file is a folder, otherwise false
   */
 bool fs_is_filename_folder(const char *filename, const char *pwd);

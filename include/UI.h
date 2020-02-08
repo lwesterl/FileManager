@@ -559,7 +559,7 @@ void PopOverDialogOkButton_action(GtkButton *PopOverDialogOkButton);
   *   or RightFileView
   *   @param event Keypress event
   *   @param data Additional data pointer, unused
-  *   @param return FALSE to further process the key press, or TRUE to stop the
+  *   @return FALSE to further process the key press, or TRUE to stop the
   *   event propagation
   */
 gboolean keypress_handler(GtkWidget *widget, GdkEventKey *event, gpointer data);
