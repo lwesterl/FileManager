@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -Wall -pedantic -Wextra -g $(shell pkg-config --cflags gtk+-3.0)
 LDFLAGS = -lssh -rdynamic $(shell pkg-config --libs gtk+-3.0)
 OBJ = ssh.o UI.o str_messages.o fs.o assets.o
-EXE = main
+EXE = FileManager
 
 .PHONY: run clean clean-objects
 
@@ -16,7 +16,7 @@ all:	$(EXE)
 %.o:	$(SRC)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-main:	$(OBJ) $(SRC)/main.c
+FileManager:	$(OBJ) $(SRC)/main.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 clean:
@@ -25,7 +25,7 @@ clean:
 clean-objects:
 	$(RM) ${OBJ}
 
-run: main
+run: ${EXE}
 	./$<
 
 leak-check: main
