@@ -28,7 +28,7 @@ static const char* const error_strings[] =
   "Error: server public key changed, disconnected by security reasons\n",
   "Error: cannot find apropriate public key for server\n",
   "Info: cannot find ~/.ssh/known_hosts\n(created if the server key is accepted).\nThe server provided the following SHA1 public key:\n",
-  "Info: server is unknown.\nDo you trust the server?\nThe server provided the following SHA1 public key:\n",
+  "Info: server is unknown.\nDo you trust the server?\nThe server provided the following SHA1 public key:\n0x",
   "Error: password authentication\n",
   "Error: SFTP session allocation failed\n",
   "Error: SFTP session initialization failed\n",
