@@ -21,15 +21,19 @@ gboolean check_asyncQueue(gpointer user_data) {
     WorkerMessage_t *worker_msg = (WorkerMessage_t *) data;
     if ((worker_msg->msg == FILE_ALREADY_EXISTS) || (worker_msg->msg == DIR_ALREADY_EXISTS)) {
       // Prompt user whether to overwrite the existing files
-      const char *info = OVERWRITE_PROMT_MSG;
-      char *msg = malloc(strlen(info) + strlen(worker_msg->pwd) +1);
+      const char *info = OVERWRITE_PROMPT_MSG;
+      File_t *file = (File_t *) fileCopies->data;
+      // This relies to the current implementation where only one file can be selected for copy operation
+      char *filepath = construct_filepath(worker_msg->pwd, file->name);
+      char *msg = malloc(strlen(info) + strlen(filepath) + 1);
       if (msg) {
         strcpy(msg, info);
-        strcat(msg, worker_msg->pwd);
+        strcat(msg, filepath);
         Session_message(session, msg);
         free(msg);
         transition_MessageWindow(ASK_OVERWRITE, session->message);
       }
+      free(filepath);
     } else if (worker_msg->msg == STOP_FILE_OPERATIONS) {
       stop = 0;
       Session_message(session, get_error(INFO_CANCELED_OPERATION));
@@ -914,10 +918,9 @@ void delete_file_threaded(bool finalize) {
     working_on_remote = worker_data->target_remote;
     return;
   } else {
-    // Just show a promt whether to delete files
-    const char *promt = "Are you sure?\nOperation will permanently erase contents of:\n";
-    char *msg = malloc(strlen(promt) + strlen((const char *) filename) + 1);
-    strcpy(msg, promt);
+    // Just show a prompt whether to delete files
+    char *msg = malloc(strlen(DELETE_PROMPT_MSG) + strlen((const char *) filename) + 1);
+    strcpy(msg, DELETE_PROMPT_MSG);
     strcat(msg, (const char *) filename);
     Session_message(session, msg);
     free(msg);
@@ -953,10 +956,9 @@ void delete_file(bool finalize) {
     }
     free(path);
   } else {
-    // Just show a promt whether to delete files
-    const char *promt = "Are you sure?\nOperation will permanently erase contents of:\n";
-    char *msg = malloc(strlen(promt) + strlen((const char *) filename) + 1);
-    strcpy(msg, promt);
+    // Just show a prompt whether to delete files
+    char *msg = malloc(strlen(DELETE_PROMPT_MSG) + strlen((const char *) filename) + 1);
+    strcpy(msg, DELETE_PROMPT_MSG);
     strcat(msg, (const char *) filename);
     Session_message(session, msg);
     free(msg);
@@ -1051,7 +1053,7 @@ void paste_files(const bool overwrite) {
     ret = iterate_FileCopyList(fileCopies, paste_file, (const void *) pwd, overwrite, target_remote);
     if ((ret == FILE_ALREADY_EXISTS) || (ret == DIR_ALREADY_EXISTS)) {
       // Prompt user whether to overwrite the existing files
-      const char *info = OVERWRITE_PROMT_MSG;
+      const char *info = OVERWRITE_PROMPT_MSG;
       char *msg = malloc(strlen(info) + strlen(pwd) +1);
       if (msg) {
         strcpy(msg, info);

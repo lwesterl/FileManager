@@ -318,6 +318,7 @@ bool show_hidden_files; /**< Whether to show hidden files or not */
   *   @param user_data Pointer to the queue
   *   @return Whether to keep running this: we want to stop running this after
   *   the worker exits
+  *   @todo This needs to be changed if multifile copy is implemented
   */
 gboolean check_asyncQueue(gpointer user_data);
 

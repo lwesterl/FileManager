@@ -14,7 +14,8 @@
 #define MESSAGE_LEN 200
 
 /**< Define misc. messages */
-#define OVERWRITE_PROMT_MSG "Do you want to overwrite files in:\n"
+#define OVERWRITE_PROMPT_MSG "Do you want to overwrite files:\n"
+#define DELETE_PROMPT_MSG "Are you sure?\nOperation will permanently erase contents of:\n"
 
 
 /** Error messages */
